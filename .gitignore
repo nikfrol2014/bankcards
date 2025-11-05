@@ -1,0 +1,92 @@
+# Compiled class file
+*.class
+
+# Log files
+*.log
+logs/
+
+# Package Files #
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+
+# IDE
+.idea/
+*.iws
+*.iml
+*.ipr
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Application properties (except main application.yml)
+application-*.yml
+application-*.properties
+!application.yml
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Build output
+build/
+out/
+
+# Liquibase (optional - если хотите скрыть сгенерированные файлы)
+# *.json
+# *.txt
+
+# Temporary files
+tmp/
+temp/
+
+# Unit test reports
+TEST-*.xml
+surefire-reports/
+test-results/
+
+# Coverage reports
+jacoco.exec
+*.gcov
+*.lcov
+
+# Logging
+log/
+logging/
+
+# Mac
+.AppleDouble
+.LSOverride
+
+# Windows
+$RECYCLE.BIN/
+
+# Linux
+*~
+
+# Debug files
+*.hprof
