@@ -7,6 +7,7 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 @Entity
 @Data
@@ -40,6 +41,12 @@ public class Card {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user; // Владелец карты
+
+    @OneToMany(mappedBy = "fromCard", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Transaction> sentTransactions;
+
+    @OneToMany(mappedBy = "toCard", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Transaction> receivedTransactions;
 
     public Card() {}
 
