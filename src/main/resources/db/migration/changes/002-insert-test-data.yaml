@@ -9,7 +9,7 @@ databaseChangeLog:
             columns:
               - column: {name: username, value: admin}
               - column: {name: email, value: admin@bank.com}
-              - column: {name: password, value: "$2a$10$LtkjllGgtVM7.WR5gCkkoeVxNBqKfFdXvTXlmJ5u2ZM6nsZoDxKqO"} #admin123
+              - column: {name: password, value: "$2a$10$34UuF5Ur5Ro.lZB/kYYlUeNXS5qUbmKkfMT0gLOl0dnY1XQ30NdxS"} #admin123
               - column: {name: role, value: ROLE_ADMIN}
 
         # Пользователь 1
@@ -18,7 +18,7 @@ databaseChangeLog:
             columns:
               - column: {name: username, value: user1}
               - column: {name: email, value: user1@bank.com}
-              - column: {name: password, value: "$2a$10$irW2AFdxihYgAvGSZDn..O60pAcM3DUpoq9cHTj1q5J6Bj9PuI4xm"} #user1123
+              - column: {name: password, value: "$2a$10$7sx.1sp4NFxaSMOQ9FDXYeStPu5xZOv6/PQNby3MCpSgBUx06gXgu"} #user1123
               - column: {name: role, value: ROLE_USER}
 
         # Пользователь 2
@@ -27,82 +27,82 @@ databaseChangeLog:
             columns:
               - column: {name: username, value: user2}
               - column: {name: email, value: user2@bank.com}
-              - column: {name: password, value: "$2a$10$lN/R9r90Agt2MIohZv7DB.xevU7SKZtD2w.43Yc/KBf0q5eM6RehG"} #user2123
+              - column: {name: password, value: "$2a$10$YFtu1BWwoefWJjvqExIlXuqcY7o9orWJiKH1MD50TSQjPhU1v1UFe"} #user2123
               - column: {name: role, value: ROLE_USER}
 
   - changeSet:
       id: 005-insert-test-cards
       author: bank_system
       changes:
-        # Карты для user1 (3 карты)
-        - insert:
-            tableName: cards
-            columns:
-              - column: {name: card_number, value: "encrypted_4111111111111111"}
-              - column: {name: owner, value: "IVAN IVANOV"}
-              - column: {name: expiry_date, value: "2026-12-31"}
-              - column: {name: status, value: ACTIVE}
-              - column: {name: balance, value: 15000.50}
-              - column: {name: user_id, value: 2}
+      # Карты для user1 (3 карты)
+      - insert:
+          tableName: cards
+          columns:
+            - column: {name: card_number, value: "encrypted_4111111111111111"}
+            - column: {name: owner, value: "IVAN IVANOV"}
+            - column: {name: expiry_date, value: "2026-12-31"}  # Будущая дата
+            - column: {name: status, value: ACTIVE}
+            - column: {name: balance, value: 15000.50}
+            - column: {name: user_id, value: 2}
 
-        - insert:
-            tableName: cards
-            columns:
-              - column: {name: card_number, value: "encrypted_4222222222222222"}
-              - column: {name: owner, value: "IVAN IVANOV"}
-              - column: {name: expiry_date, value: "2025-06-30"}
-              - column: {name: status, value: ACTIVE}
-              - column: {name: balance, value: 7500.00}
-              - column: {name: user_id, value: 2}
+      - insert:
+          tableName: cards
+          columns:
+            - column: {name: card_number, value: "encrypted_4222222222222222"}
+            - column: {name: owner, value: "IVAN IVANOV"}
+            - column: {name: expiry_date, value: "2026-06-30"}  # Будущая дата
+            - column: {name: status, value: ACTIVE}
+            - column: {name: balance, value: 7500.00}
+            - column: {name: user_id, value: 2}
 
-        - insert:
-            tableName: cards
-            columns:
-              - column: {name: card_number, value: "encrypted_4333333333333333"}
-              - column: {name: owner, value: "IVAN IVANOV"}
-              - column: {name: expiry_date, value: "2024-03-31"}
-              - column: {name: status, value: BLOCKED}
-              - column: {name: balance, value: 0.00}
-              - column: {name: user_id, value: 2}
+      - insert:
+          tableName: cards
+          columns:
+            - column: {name: card_number, value: "encrypted_4333333333333333"}
+            - column: {name: owner, value: "IVAN IVANOV"}
+            - column: {name: expiry_date, value: "2024-03-31"}  # Оставить expired для теста
+            - column: {name: status, value: BLOCKED}
+            - column: {name: balance, value: 0.00}
+            - column: {name: user_id, value: 2}
 
-        # Карты для user2 (2 карты)
-        - insert:
-            tableName: cards
-            columns:
-              - column: {name: card_number, value: "encrypted_4555555555555555"}
-              - column: {name: owner, value: "PETR PETROV"}
-              - column: {name: expiry_date, value: "2027-01-31"}
-              - column: {name: status, value: ACTIVE}
-              - column: {name: balance, value: 25000.75}
-              - column: {name: user_id, value: 3}
+      # Карты для user2 (2 карты)
+      - insert:
+          tableName: cards
+          columns:
+            - column: {name: card_number, value: "encrypted_4555555555555555"}
+            - column: {name: owner, value: "PETR PETROV"}
+            - column: {name: expiry_date, value: "2027-01-31"}  # Будущая дата
+            - column: {name: status, value: ACTIVE}
+            - column: {name: balance, value: 25000.75}
+            - column: {name: user_id, value: 3}
 
-        - insert:
-            tableName: cards
-            columns:
-              - column: {name: card_number, value: "encrypted_4666666666666666"}
-              - column: {name: owner, value: "PETR PETROV"}
-              - column: {name: expiry_date, value: "2023-12-31"}
-              - column: {name: status, value: EXPIRED}
-              - column: {name: balance, value: 500.25}
-              - column: {name: user_id, value: 3}
+      - insert:
+          tableName: cards
+          columns:
+            - column: {name: card_number, value: "encrypted_4666666666666666"}
+            - column: {name: owner, value: "PETR PETROV"}
+            - column: {name: expiry_date, value: "2023-12-31"}  # Оставить expired для теста
+            - column: {name: status, value: EXPIRED}
+            - column: {name: balance, value: 500.25}
+            - column: {name: user_id, value: 3}
 
-        # Карты для admin (2 карты)
-        - insert:
-            tableName: cards
-            columns:
-              - column: {name: card_number, value: "encrypted_4777777777777777"}
-              - column: {name: owner, value: "ADMIN ADMINOV"}
-              - column: {name: expiry_date, value: "2028-05-31"}
-              - column: {name: status, value: ACTIVE}
-              - column: {name: balance, value: 50000.00}
-              - column: {name: user_id, value: 1}
+      # Карты для admin (2 карты)
+      - insert:
+          tableName: cards
+          columns:
+            - column: {name: card_number, value: "encrypted_4777777777777777"}
+            - column: {name: owner, value: "ADMIN ADMINOV"}
+            - column: {name: expiry_date, value: "2028-05-31"}  # Будущая дата
+            - column: {name: status, value: ACTIVE}
+            - column: {name: balance, value: 50000.00}
+            - column: {name: user_id, value: 1}
 
-        - insert:
-            tableName: cards
-            columns:
-              - column: {name: card_number, value: "encrypted_4888888888888888"}
-              - column: {name: owner, value: "ADMIN ADMINOV"}
-              - column: {name: expiry_date, value: "2026-08-31"}
-              - column: {name: status, value: ACTIVE}
-              - column: {name: balance, value: 15000.00}
-              - column: {name: user_id, value: 1}
+      - insert:
+          tableName: cards
+          columns:
+            - column: {name: card_number, value: "encrypted_4888888888888888"}
+            - column: {name: owner, value: "ADMIN ADMINOV"}
+            - column: {name: expiry_date, value: "2026-08-31"}  # Будущая дата
+            - column: {name: status, value: ACTIVE}
+            - column: {name: balance, value: 15000.00}
+            - column: {name: user_id, value: 1}
