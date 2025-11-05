@@ -57,3 +57,6 @@ springdoc:
 jwt:
   secret: ${JWT_SECRET:myVerySecretKeyForJWTGeneration123!}
   expiration: 86400000 # 24 hours
+
+  encryption:
+    secret-key: mySuperSecretKeyForBankCards123! # Ключ для шифрования номеров карт
