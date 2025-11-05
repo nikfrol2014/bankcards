@@ -1,8 +1,11 @@
 package com.example.bankcards.service;
 
+import com.example.bankcards.entity.Role;
 import com.example.bankcards.entity.User;
 import com.example.bankcards.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -41,5 +44,25 @@ public class UserService implements UserDetailsService {
 
     public Optional<User> findUserById(Long userId) {
         return userRepository.findById(userId);
+    }
+
+    // Получить всех пользователей с пагинацией
+    public Page<User> getAllUsers(Pageable pageable) {
+        return userRepository.findAll(pageable);
+    }
+
+    // Поиск пользователей по username
+    public Page<User> searchUsersByUsername(String username, Pageable pageable) {
+        return userRepository.findByUsernameContainingIgnoreCase(username, pageable);
+    }
+
+    // Получить общее количество пользователей
+    public long getTotalUsersCount() {
+        return userRepository.count();
+    }
+
+    // Получить количество пользователей по роли
+    public long getUsersCountByRole(Role role) {
+        return userRepository.countByRole(role);
     }
 }
