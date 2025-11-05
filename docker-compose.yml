@@ -8,8 +8,6 @@
 #  - Открыть нужные порты (например, 5432, 8080).
 #  - Настроить volume для хранения данных БД.
 
-version: '3.8'
-
 services:
   postgres:
     image: postgres:15
@@ -22,17 +20,20 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./init-db:/docker-entrypoint-initdb.d
     networks:
       - bank_network
 
   app:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: bank_app
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/bank_cards
       SPRING_DATASOURCE_USERNAME: bank_user
       SPRING_DATASOURCE_PASSWORD: bank_password
+      JWT_SECRET: myVerySecretKeyForJWTGeneration123!
+      ENCRYPTION_SECRET_KEY: mySuperSecretKeyForBankCards123!
     ports:
       - "8080:8080"
     depends_on:

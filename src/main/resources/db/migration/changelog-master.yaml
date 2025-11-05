@@ -1,7 +1,5 @@
 databaseChangeLog:
   - include:
-      file: db/migration/changes/001-initial-schema.yaml
-      relativeToChangelogFile: true
+      file: classpath:db/migration/changes/001-initial-schema.yaml
   - include:
-      file: db/migration/changes/002-insert-test-data.yaml
-      relativeToChangelogFile: true
+      file: classpath:db/migration/changes/002-insert-test-data.yaml
