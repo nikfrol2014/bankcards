@@ -1,0 +1,199 @@
+databaseChangeLog:
+  - changeSet:
+      id: 001-create-users-table
+      author: bank_system
+      changes:
+        - createTable:
+            tableName: users
+            columns:
+              - column:
+                  name: id
+                  type: bigserial
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: username
+                  type: varchar(50)
+                  constraints:
+                    unique: true
+                    nullable: false
+              - column:
+                  name: email
+                  type: varchar(100)
+                  constraints:
+                    unique: true
+                    nullable: false
+              - column:
+                  name: password
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: role
+                  type: varchar(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: timestamp
+                  defaultValueComputed: CURRENT_TIMESTAMP
+              - column:
+                  name: updated_at
+                  type: timestamp
+                  defaultValueComputed: CURRENT_TIMESTAMP
+
+        - createIndex:
+            tableName: users
+            indexName: idx_users_username
+            columns:
+              - column:
+                  name: username
+                  type: varchar(50)
+
+        - createIndex:
+            tableName: users
+            indexName: idx_users_email
+            columns:
+              - column:
+                  name: email
+                  type: varchar(100)
+
+  - changeSet:
+      id: 002-create-cards-table
+      author: bank_system
+      changes:
+        - createTable:
+            tableName: cards
+            columns:
+              - column:
+                  name: id
+                  type: bigserial
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: card_number
+                  type: varchar(255)
+                  constraints:
+                    unique: true
+                    nullable: false
+              - column:
+                  name: owner
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: expiry_date
+                  type: date
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: varchar(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: balance
+                  type: decimal(15,2)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: user_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_cards_user_id
+                    references: users(id)
+              - column:
+                  name: created_at
+                  type: timestamp
+                  defaultValueComputed: CURRENT_TIMESTAMP
+              - column:
+                  name: updated_at
+                  type: timestamp
+                  defaultValueComputed: CURRENT_TIMESTAMP
+
+        - createIndex:
+            tableName: cards
+            indexName: idx_cards_user_id
+            columns:
+              - column:
+                  name: user_id
+                  type: bigint
+
+        - createIndex:
+            tableName: cards
+            indexName: idx_cards_status
+            columns:
+              - column:
+                  name: status
+                  type: varchar(20)
+
+  - changeSet:
+      id: 003-create-transactions-table
+      author: bank_system
+      changes:
+        - createTable:
+            tableName: transactions
+            columns:
+              - column:
+                  name: id
+                  type: bigserial
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: from_card_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_transactions_from_card_id
+                    references: cards(id)
+              - column:
+                  name: to_card_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_transactions_to_card_id
+                    references: cards(id)
+              - column:
+                  name: amount
+                  type: decimal(15,2)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: transaction_date
+                  type: timestamp
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: varchar(500)
+
+        - createIndex:
+            tableName: transactions
+            indexName: idx_transactions_from_card_id
+            columns:
+              - column:
+                  name: from_card_id
+                  type: bigint
+
+        - createIndex:
+            tableName: transactions
+            indexName: idx_transactions_to_card_id
+            columns:
+              - column:
+                  name: to_card_id
+                  type: bigint
+
+        - createIndex:
+            tableName: transactions
+            indexName: idx_transactions_date
+            columns:
+              - column:
+                  name: transaction_date
+                  type: timestamp

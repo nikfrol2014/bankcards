@@ -1,0 +1,72 @@
+databaseChangeLog:
+  - changeSet:
+      id: 004-insert-test-users
+      author: bank_system
+      changes:
+        - insert:
+            tableName: users
+            columns:
+              - column: {name: username, value: admin}
+              - column: {name: email, value: admin@bank.com}
+              - column: {name: password, value: $2a$12$ABCDEFGHIJKLMNOPQRSTUVOeR6R8r2C5P8V1q2J3K4L5M6N7O8P9Q0R} # password: admin123
+              - column: {name: role, value: ROLE_ADMIN}
+
+        - insert:
+            tableName: users
+            columns:
+              - column: {name: username, value: user1}
+              - column: {name: email, value: user1@bank.com}
+              - column: {name: password, value: $2a$12$ABCDEFGHIJKLMNOPQRSTUVOeR6R8r2C5P8V1q2J3K4L5M6N7O8P9Q0R} # password: user123
+              - column: {name: role, value: ROLE_USER}
+
+        - insert:
+            tableName: users
+            columns:
+              - column: {name: username, value: user2}
+              - column: {name: email, value: user2@bank.com}
+              - column: {name: password, value: $2a$12$ABCDEFGHIJKLMNOPQRSTUVOeR6R8r2C5P8V1q2J3K4L5M6N7O8P9Q0R} # password: user123
+              - column: {name: role, value: ROLE_USER}
+
+  - changeSet:
+      id: 005-insert-test-cards
+      author: bank_system
+      changes:
+        - insert:
+            tableName: cards
+            columns:
+              - column: {name: card_number, value: encrypted_card_1111222233334444}
+              - column: {name: owner, value: "IVAN IVANOV"}
+              - column: {name: expiry_date, value: "2026-12-31"}
+              - column: {name: status, value: ACTIVE}
+              - column: {name: balance, value: 1000.00}
+              - column: {name: user_id, value: 2}
+
+        - insert:
+            tableName: cards
+            columns:
+              - column: {name: card_number, value: encrypted_card_5555666677778888}
+              - column: {name: owner, value: "IVAN IVANOV"}
+              - column: {name: expiry_date, value: "2025-06-30"}
+              - column: {name: status, value: ACTIVE}
+              - column: {name: balance, value: 500.00}
+              - column: {name: user_id, value: 2}
+
+        - insert:
+            tableName: cards
+            columns:
+              - column: {name: card_number, value: encrypted_card_9999000011112222}
+              - column: {name: owner, value: "PETR PETROV"}
+              - column: {name: expiry_date, value: "2024-03-31"}
+              - column: {name: status, value: ACTIVE}
+              - column: {name: balance, value: 1500.00}
+              - column: {name: user_id, value: 3}
+
+        - insert:
+            tableName: cards
+            columns:
+              - column: {name: card_number, value: encrypted_card_3333444455556666}
+              - column: {name: owner, value: "PETR PETROV"}
+              - column: {name: expiry_date, value: "2023-01-31"}
+              - column: {name: status, value: EXPIRED}
+              - column: {name: balance, value: 0.00}
+              - column: {name: user_id, value: 3}
