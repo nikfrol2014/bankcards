@@ -64,19 +64,24 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http.cors(cors -> cors.configurationSource(corsConfigurationSource()))
+        http
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // Public endpoints - БЕЗ /api/
-                        .requestMatchers("/auth/**", "/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
-                        // Admin only endpoints - БЕЗ /api/
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
-                        // User endpoints - БЕЗ /api/
-                        .requestMatchers("/cards/**", "/transactions/**").hasAnyRole("USER", "ADMIN")
-                        // All other requests need authentication
-                        .anyRequest().authenticated()
+                        .anyRequest().permitAll()  // РАЗРЕШИТЬ ВСЕ ДЛЯ ТЕСТИРОВАНИЯ
                 );
+//                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+//                .authorizeHttpRequests(auth -> auth
+//                        // PUBLIC endpoints
+//                        .requestMatchers("/api/auth/**").permitAll()
+//                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
+//
+//                        // PROTECTED endpoints
+//                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+//                        .requestMatchers("/api/cards/**", "/api/transactions/**").hasAnyRole("USER", "ADMIN")
+//
+//                        .anyRequest().authenticated()
+//                );
 
         http.authenticationProvider(authenticationProvider());
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

@@ -25,7 +25,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/transactions")
+@RequestMapping("/api/transactions")
+@PreAuthorize("hasAnyRole('USER', 'ADMIN')")
 public class TransactionController {
 
     @Autowired

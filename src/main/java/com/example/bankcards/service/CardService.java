@@ -3,6 +3,9 @@ package com.example.bankcards.service;
 import com.example.bankcards.entity.Card;
 import com.example.bankcards.entity.CardStatus;
 import com.example.bankcards.entity.User;
+import com.example.bankcards.exception.CardBlockedException;
+import com.example.bankcards.exception.CardExpiredException;
+import com.example.bankcards.exception.CardNotFoundException;
 import com.example.bankcards.repository.CardRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -11,7 +14,6 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -63,7 +65,7 @@ public class CardService {
     // Обновить статус карты
     public Card updateCardStatus(Long cardId, CardStatus newStatus, User user) {
         Card card = cardRepository.findByIdAndUser(cardId, user)
-                .orElseThrow(() -> new RuntimeException("Card not found or access denied"));
+                .orElseThrow(() -> new CardNotFoundException("Card not found with id: " + cardId + " or access denied"));
 
         card.setStatus(newStatus);
         return cardRepository.save(card);
@@ -72,16 +74,29 @@ public class CardService {
     // Обновить баланс карты
     public Card updateBalance(Long cardId, BigDecimal newBalance) {
         Card card = cardRepository.findById(cardId)
-                .orElseThrow(() -> new RuntimeException("Card not found"));
+                .orElseThrow(() -> new CardNotFoundException(cardId));
 
         card.setBalance(newBalance);
         return cardRepository.save(card);
     }
 
-    // Проверить, активна ли карта
+    // Проверить, активна ли карта (без исключений)
     public boolean isCardActive(Card card) {
         return card.getStatus() == CardStatus.ACTIVE &&
                 !card.getExpiryDate().isBefore(LocalDate.now());
+    }
+
+    // Валидация карты для транзакции (с исключениями)
+    public void validateCardForTransaction(Card card) {
+        if (card.getStatus() == CardStatus.BLOCKED) {
+            throw new CardBlockedException(card.getId());
+        }
+        if (card.getExpiryDate().isBefore(LocalDate.now())) {
+            throw new CardExpiredException(card.getId());
+        }
+        if (card.getStatus() != CardStatus.ACTIVE) {
+            throw new CardBlockedException("Card is not active: " + card.getId());
+        }
     }
 
     // Проверить, не истек ли срок карты
@@ -115,7 +130,7 @@ public class CardService {
     // Удалить карту
     public void deleteCard(Long cardId, User user) {
         Card card = cardRepository.findByIdAndUser(cardId, user)
-                .orElseThrow(() -> new RuntimeException("Card not found or access denied"));
+                .orElseThrow(() -> new CardNotFoundException("Card not found with id: " + cardId + " or access denied"));
         cardRepository.delete(card);
     }
 
