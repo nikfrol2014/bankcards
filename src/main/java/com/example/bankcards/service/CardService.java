@@ -118,4 +118,8 @@ public class CardService {
                 .orElseThrow(() -> new RuntimeException("Card not found or access denied"));
         cardRepository.delete(card);
     }
+
+    public Page<Card> getAllCards(Pageable pageable) {
+        return cardRepository.findAll(pageable);
+    }
 }

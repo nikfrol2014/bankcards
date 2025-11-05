@@ -7,6 +7,7 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
@@ -48,6 +49,14 @@ public class Card {
     @OneToMany(mappedBy = "toCard", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Transaction> receivedTransactions;
 
+    ///////////////////////////////////////////////////////////
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+    //////////////////////////////////////////////////////////
+
     public Card() {}
 
     public Card(String cardNumber, String owner, LocalDate expiryDate,
@@ -59,4 +68,16 @@ public class Card {
         this.balance = balance;
         this.user = user;
     }
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
+
 }

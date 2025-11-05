@@ -22,7 +22,13 @@ public interface CardRepository extends JpaRepository<Card, Long> {
     // Найти все карты пользователя по статусу с пагинацией
     Page<Card> findByUserAndStatus(User user, CardStatus status, Pageable pageable);
 
+    // Найти карту по номеру (для проверки уникальности)
     Optional<Card> findByCardNumber(String cardNumber);
+
+    // Найти карту по ID и пользователю (для проверки владения)
+    Optional<Card> findByIdAndUser(Long id, User user);
+
+    // Проверить существование карты по номеру
     boolean existsByCardNumber(String cardNumber);
 
     // Найти все активные карты пользователя
@@ -34,6 +40,6 @@ public interface CardRepository extends JpaRepository<Card, Long> {
                                                       @Param("owner") String owner,
                                                       Pageable pageable);
 
-    // Найти карту по ID и пользователю (для проверки владения)
-    Optional<Card> findByIdAndUser(Long id, User user);
+    // Получить все карты (для админа)
+    Page<Card> findAll(Pageable pageable);
 }
