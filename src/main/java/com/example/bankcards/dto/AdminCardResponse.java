@@ -8,9 +8,7 @@ import java.time.LocalDate;
 
 @Data
 public class AdminCardResponse {
-    private String cardNumber;       // Зашифрованный номер (ID)
-    private String decryptedNumber;  // Оригинальный номер
-    private String maskedNumber;     // Замаскированный номер
+    private String maskedNumber;     // ТОЛЬКО маскированный номер
     private String owner;
     private LocalDate expiryDate;
     private CardStatus status;
@@ -20,10 +18,8 @@ public class AdminCardResponse {
 
     public AdminCardResponse() {}
 
-    public AdminCardResponse(String cardNumber, String decryptedNumber, String maskedNumber, String owner,
-                             LocalDate expiryDate, CardStatus status, BigDecimal balance, Long userId, String username) {
-        this.cardNumber = cardNumber;
-        this.decryptedNumber = decryptedNumber;
+    public AdminCardResponse(String maskedNumber, String owner, LocalDate expiryDate,
+                             CardStatus status, BigDecimal balance, Long userId, String username) {
         this.maskedNumber = maskedNumber;
         this.owner = owner;
         this.expiryDate = expiryDate;

@@ -226,15 +226,12 @@ public class AdminController {
 
 
 
-    // Преобразование Card в AdminCardResponse (с расшифрованным номером)
+    // Преобразование Card в AdminCardResponse (ТОЛЬКО маскированный номер)
     private AdminCardResponse convertToAdminCardResponse(Card card) {
-        String decryptedNumber = cardService.getDecryptedCardNumber(card);
         String maskedNumber = cardService.getMaskedCardNumber(card);
 
         return new AdminCardResponse(
-                card.getCardNumber(), // Зашифрованный номер (ID)
-                decryptedNumber,      // Расшифрованный номер
-                maskedNumber,         // Замаскированный номер
+                maskedNumber,        // ТОЛЬКО маскированный номер
                 card.getOwner(),
                 card.getExpiryDate(),
                 card.getStatus(),

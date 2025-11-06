@@ -8,8 +8,7 @@ import java.time.LocalDate;
 
 @Data
 public class CardResponse {
-    private String cardNumber; // Теперь String вместо Long
-    private String maskedNumber;
+    private String maskedNumber;    // ТОЛЬКО маскированный номер
     private String owner;
     private LocalDate expiryDate;
     private CardStatus status;
@@ -18,9 +17,8 @@ public class CardResponse {
 
     public CardResponse() {}
 
-    public CardResponse(String cardNumber, String maskedNumber, String owner, LocalDate expiryDate,
+    public CardResponse(String maskedNumber, String owner, LocalDate expiryDate,
                         CardStatus status, BigDecimal balance, Long userId) {
-        this.cardNumber = cardNumber;
         this.maskedNumber = maskedNumber;
         this.owner = owner;
         this.expiryDate = expiryDate;

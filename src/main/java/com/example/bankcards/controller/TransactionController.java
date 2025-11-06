@@ -125,9 +125,7 @@ public class TransactionController {
 
         return new TransferResponse(
                 transaction.getId(),
-                transaction.getFromCard().getCardNumber(), // Зашифрованный номер
-                transaction.getToCard().getCardNumber(),   // Зашифрованный номер
-                fromCardMasked,
+                fromCardMasked,      // ТОЛЬКО маскированные номера
                 toCardMasked,
                 transaction.getAmount(),
                 transaction.getTransactionDate(),

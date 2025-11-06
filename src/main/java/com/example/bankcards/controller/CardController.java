@@ -185,8 +185,7 @@ public class CardController {
     private CardResponse convertToCardResponse(Card card) {
         String maskedNumber = cardService.getMaskedCardNumber(card);
         return new CardResponse(
-                card.getCardNumber(), // Теперь это зашифрованный номер карты
-                maskedNumber,
+                maskedNumber,        // ТОЛЬКО маскированный номер
                 card.getOwner(),
                 card.getExpiryDate(),
                 card.getStatus(),
