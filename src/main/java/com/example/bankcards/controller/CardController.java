@@ -5,8 +5,6 @@ import com.example.bankcards.dto.CardResponse;
 import com.example.bankcards.entity.Card;
 import com.example.bankcards.entity.CardStatus;
 import com.example.bankcards.entity.User;
-import com.example.bankcards.exception.CardNotFoundException;
-import com.example.bankcards.exception.UserNotFoundException;
 import com.example.bankcards.service.CardService;
 import com.example.bankcards.service.EncryptionService;
 import com.example.bankcards.service.UserService;
@@ -38,6 +36,8 @@ public class CardController {
     @Autowired
     private EncryptionService encryptionService;
 
+    // ========== ПОЛЬЗОВАТЕЛЬСКИЕ ЭНДПОИНТЫ ==========
+
     // Получить все карты пользователя с пагинацией
     @GetMapping
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
@@ -55,41 +55,12 @@ public class CardController {
         return ResponseEntity.ok(response);
     }
 
-    // Получить карту по номеру
-    @GetMapping("/{cardNumber}")
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
-    public ResponseEntity<CardResponse> getCardByNumber(
-            @AuthenticationPrincipal UserDetails userDetails,
-            @PathVariable String cardNumber) {
-
-        User user = userService.findByUsername(userDetails.getUsername());
-        Card card = cardService.getByCardNumberAndUser(cardNumber, user);
-        return ResponseEntity.ok(convertToCardResponse(card));
-    }
-
-    // Обновить баланс карты по оригинальному номеру
-    @PutMapping("/balance")
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
-    public ResponseEntity<CardResponse> updateCardBalance(
-            @AuthenticationPrincipal UserDetails userDetails,
-            @RequestParam String cardNumber, // Оригинальный номер (4111111111111111)
-            @RequestParam @DecimalMin(value = "0.00", message = "Balance must be positive") BigDecimal newBalance) {
-
-        User user = userService.findByUsername(userDetails.getUsername());
-
-        // Шифруем номер для поиска в БД
-        String encryptedCardNumber = encryptionService.encrypt(cardNumber);
-
-        Card card = cardService.updateCardBalance(encryptedCardNumber, newBalance, user);
-        return ResponseEntity.ok(convertToCardResponse(card));
-    }
-
     // Получить карту по оригинальному номеру
     @GetMapping("/by-number")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public ResponseEntity<CardResponse> getCardByOriginalNumber(
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestParam String cardNumber) {
+            @RequestParam String cardNumber) { // Оригинальный номер
 
         User user = userService.findByUsername(userDetails.getUsername());
 
@@ -100,58 +71,52 @@ public class CardController {
         return ResponseEntity.ok(convertToCardResponse(card));
     }
 
-    // Создать новую карту (только для ADMIN)
-    @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<CardResponse> createCard(
-            @Valid @RequestBody CardRequest cardRequest,
-            @RequestParam Long userId) {
-
-        User user = userService.getUserById(userId);
-
-        Card card = new Card();
-        card.setCardNumber(cardRequest.getCardNumber()); // Оригинальный номер
-        card.setOwner(cardRequest.getOwner());
-        card.setExpiryDate(cardRequest.getExpiryDate());
-
-        Card savedCard = cardService.createCard(card, user);
-        return ResponseEntity.ok(convertToCardResponse(savedCard));
-    }
-
-    // Заблокировать карту
-    @PutMapping("/{cardNumber}/block")
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
-    public ResponseEntity<CardResponse> blockCard(
-            @AuthenticationPrincipal UserDetails userDetails,
-            @PathVariable String cardNumber) {
-
-        User user = userService.findByUsername(userDetails.getUsername());
-        Card card = cardService.updateCardStatus(cardNumber, CardStatus.BLOCKED, user);
-        return ResponseEntity.ok(convertToCardResponse(card));
-    }
-
-    // Активировать карту
-    @PutMapping("/{cardNumber}/activate")
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
-    public ResponseEntity<CardResponse> activateCard(
-            @AuthenticationPrincipal UserDetails userDetails,
-            @PathVariable String cardNumber) {
-
-        User user = userService.findByUsername(userDetails.getUsername());
-        Card card = cardService.updateCardStatus(cardNumber, CardStatus.ACTIVE, user);
-        return ResponseEntity.ok(convertToCardResponse(card));
-    }
-
-    // Получить баланс карты
-    @GetMapping("/{cardNumber}/balance")
+    // Получить баланс карты по оригинальному номеру
+    @GetMapping("/balance")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public ResponseEntity<BigDecimal> getCardBalance(
             @AuthenticationPrincipal UserDetails userDetails,
-            @PathVariable String cardNumber) {
+            @RequestParam String cardNumber) { // Оригинальный номер
 
         User user = userService.findByUsername(userDetails.getUsername());
-        Card card = cardService.getByCardNumberAndUser(cardNumber, user);
+
+        // Шифруем номер для поиска в БД
+        String encryptedCardNumber = encryptionService.encrypt(cardNumber);
+
+        Card card = cardService.getByCardNumberAndUser(encryptedCardNumber, user);
         return ResponseEntity.ok(card.getBalance());
+    }
+
+    // Блокировать карту по оригинальному номеру
+    @PutMapping("/block")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    public ResponseEntity<CardResponse> blockCard(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam String cardNumber) { // Оригинальный номер
+
+        User user = userService.findByUsername(userDetails.getUsername());
+
+        // Шифруем номер для поиска в БД
+        String encryptedCardNumber = encryptionService.encrypt(cardNumber);
+
+        Card card = cardService.updateCardStatus(encryptedCardNumber, CardStatus.BLOCKED, user);
+        return ResponseEntity.ok(convertToCardResponse(card));
+    }
+
+    // Активировать карту по оригинальному номеру
+    @PutMapping("/activate")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    public ResponseEntity<CardResponse> activateCard(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam String cardNumber) { // Оригинальный номер
+
+        User user = userService.findByUsername(userDetails.getUsername());
+
+        // Шифруем номер для поиска в БД
+        String encryptedCardNumber = encryptionService.encrypt(cardNumber);
+
+        Card card = cardService.updateCardStatus(encryptedCardNumber, CardStatus.ACTIVE, user);
+        return ResponseEntity.ok(convertToCardResponse(card));
     }
 
     // Поиск карт по владельцу (имя на карте)
@@ -171,13 +136,37 @@ public class CardController {
         return ResponseEntity.ok(response);
     }
 
-    // Удалить карту (только для ADMIN)
-    @DeleteMapping("/{cardNumber}")
+    // ========== АДМИНСКИЕ ЭНДПОИНТЫ ==========
+
+    // Создать новую карту (только для ADMIN)
+    @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> deleteCard(@PathVariable String cardNumber) {
+    public ResponseEntity<CardResponse> createCard(
+            @Valid @RequestBody CardRequest cardRequest,
+            @RequestParam Long userId) {
+
+        User user = userService.getUserById(userId);
+
+        Card card = new Card();
+        card.setCardNumber(cardRequest.getCardNumber()); // Оригинальный номер
+        card.setOwner(cardRequest.getOwner());
+        card.setExpiryDate(cardRequest.getExpiryDate());
+
+        Card savedCard = cardService.createCard(card, user);
+        return ResponseEntity.ok(convertToCardResponse(savedCard));
+    }
+
+    // Удалить карту по оригинальному номеру (только для ADMIN)
+    @DeleteMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> deleteCard(@RequestParam String cardNumber) { // Оригинальный номер
+
+        // Шифруем номер для поиска в БД
+        String encryptedCardNumber = encryptionService.encrypt(cardNumber);
+
         // Админ может удалить любую карту без проверки владения
-        Card card = cardService.getByCardNumber(cardNumber);
-        cardService.deleteCard(cardNumber, card.getUser());
+        Card card = cardService.getByCardNumber(encryptedCardNumber);
+        cardService.deleteCard(encryptedCardNumber, card.getUser());
         return ResponseEntity.ok().build();
     }
 

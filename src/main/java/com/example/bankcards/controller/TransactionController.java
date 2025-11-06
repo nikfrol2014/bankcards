@@ -5,7 +5,6 @@ import com.example.bankcards.dto.TransferResponse;
 import com.example.bankcards.entity.Card;
 import com.example.bankcards.entity.Transaction;
 import com.example.bankcards.entity.User;
-import com.example.bankcards.exception.CardNotFoundException;
 import com.example.bankcards.service.CardService;
 import com.example.bankcards.service.EncryptionService;
 import com.example.bankcards.service.TransactionService;
@@ -63,59 +62,127 @@ public class TransactionController {
         return ResponseEntity.ok(convertToTransferResponse(transaction));
     }
 
-    // Получить историю транзакций по карте
-    @GetMapping("/card/{cardNumber}")
+    // Получить историю транзакций по оригинальному номеру карты
+    @GetMapping("/history")
     public ResponseEntity<Page<TransferResponse>> getCardTransactions(
             @AuthenticationPrincipal UserDetails userDetails,
-            @PathVariable String cardNumber,
+            @RequestParam String cardNumber, // Оригинальный номер
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
         User user = userService.findByUsername(userDetails.getUsername());
+
+        // Шифруем номер для поиска в БД
+        String encryptedCardNumber = encryptionService.encrypt(cardNumber);
+
         // Проверяем, что карта принадлежит пользователю
-        cardService.getByCardNumberAndUser(cardNumber, user);
+        cardService.getByCardNumberAndUser(encryptedCardNumber, user);
 
         Pageable pageable = PageRequest.of(page, size, Sort.by("transactionDate").descending());
-        Page<Transaction> transactions = transactionService.getCardTransactions(cardNumber, pageable);
+        Page<Transaction> transactions = transactionService.getCardTransactions(encryptedCardNumber, pageable);
 
         Page<TransferResponse> response = transactions.map(this::convertToTransferResponse);
         return ResponseEntity.ok(response);
     }
 
-    // Получить отправленные транзакции
-    @GetMapping("/sent/{cardNumber}")
+    // Получить отправленные транзакции по оригинальному номеру карты
+    @GetMapping("/sent")
     public ResponseEntity<Page<TransferResponse>> getSentTransactions(
             @AuthenticationPrincipal UserDetails userDetails,
-            @PathVariable String cardNumber,
+            @RequestParam String cardNumber, // Оригинальный номер
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
         User user = userService.findByUsername(userDetails.getUsername());
-        cardService.getByCardNumberAndUser(cardNumber, user);
+
+        // Шифруем номер для поиска в БД
+        String encryptedCardNumber = encryptionService.encrypt(cardNumber);
+
+        cardService.getByCardNumberAndUser(encryptedCardNumber, user);
 
         Pageable pageable = PageRequest.of(page, size, Sort.by("transactionDate").descending());
-        Page<Transaction> transactions = transactionService.getSentTransactions(cardNumber, pageable);
+        Page<Transaction> transactions = transactionService.getSentTransactions(encryptedCardNumber, pageable);
 
         Page<TransferResponse> response = transactions.map(this::convertToTransferResponse);
         return ResponseEntity.ok(response);
     }
 
-    // Получить полученные транзакции
-    @GetMapping("/received/{cardNumber}")
+    // Получить полученные транзакции по оригинальному номеру карты
+    @GetMapping("/received")
     public ResponseEntity<Page<TransferResponse>> getReceivedTransactions(
             @AuthenticationPrincipal UserDetails userDetails,
-            @PathVariable String cardNumber,
+            @RequestParam String cardNumber, // Оригинальный номер
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
         User user = userService.findByUsername(userDetails.getUsername());
-        cardService.getByCardNumberAndUser(cardNumber, user);
+
+        // Шифруем номер для поиска в БД
+        String encryptedCardNumber = encryptionService.encrypt(cardNumber);
+
+        cardService.getByCardNumberAndUser(encryptedCardNumber, user);
 
         Pageable pageable = PageRequest.of(page, size, Sort.by("transactionDate").descending());
-        Page<Transaction> transactions = transactionService.getReceivedTransactions(cardNumber, pageable);
+        Page<Transaction> transactions = transactionService.getReceivedTransactions(encryptedCardNumber, pageable);
 
         Page<TransferResponse> response = transactions.map(this::convertToTransferResponse);
         return ResponseEntity.ok(response);
+    }
+
+    // Получить транзакции за период по оригинальному номеру карты
+    @GetMapping("/period")
+    public ResponseEntity<Page<TransferResponse>> getTransactionsByPeriod(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam String cardNumber, // Оригинальный номер
+            @RequestParam String startDate,
+            @RequestParam String endDate,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        User user = userService.findByUsername(userDetails.getUsername());
+
+        // Шифруем номер для поиска в БД
+        String encryptedCardNumber = encryptionService.encrypt(cardNumber);
+
+        cardService.getByCardNumberAndUser(encryptedCardNumber, user);
+
+        // Преобразуем строки в LocalDateTime (нужно добавить валидацию дат)
+        java.time.LocalDateTime start = java.time.LocalDateTime.parse(startDate);
+        java.time.LocalDateTime end = java.time.LocalDateTime.parse(endDate);
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("transactionDate").descending());
+        Page<Transaction> transactions = transactionService.getTransactionsByPeriod(
+                encryptedCardNumber, start, end, pageable);
+
+        Page<TransferResponse> response = transactions.map(this::convertToTransferResponse);
+        return ResponseEntity.ok(response);
+    }
+
+    // Получить транзакцию по ID
+    @GetMapping("/{id}")
+    public ResponseEntity<TransferResponse> getTransactionById(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long id) {
+
+        // Для простоты - пользователь может видеть любую транзакцию где участвуют его карты
+        // В реальном приложении нужна дополнительная проверка прав
+        Transaction transaction = transactionService.findById(id);
+
+        User user = userService.findByUsername(userDetails.getUsername());
+
+        // Проверяем, что пользователь имеет отношение к этой транзакции
+        String fromCardEncrypted = transaction.getFromCard().getCardNumber();
+        String toCardEncrypted = transaction.getToCard().getCardNumber();
+
+        // Пытаемся найти карты у пользователя
+        boolean hasAccess = cardService.findByCardNumberAndUser(fromCardEncrypted, user).isPresent() ||
+                cardService.findByCardNumberAndUser(toCardEncrypted, user).isPresent();
+
+        if (!hasAccess) {
+            return ResponseEntity.status(403).build();
+        }
+
+        return ResponseEntity.ok(convertToTransferResponse(transaction));
     }
 
     // Преобразование Transaction в TransferResponse

@@ -6,8 +6,6 @@ import com.example.bankcards.entity.Card;
 import com.example.bankcards.entity.CardStatus;
 import com.example.bankcards.entity.Role;
 import com.example.bankcards.entity.User;
-import com.example.bankcards.exception.CardNotFoundException;
-import com.example.bankcards.exception.UserNotFoundException;
 import com.example.bankcards.service.CardService;
 import com.example.bankcards.service.EncryptionService;
 import com.example.bankcards.service.UserService;
@@ -96,6 +94,7 @@ public class AdminController {
     @PutMapping("/users/{userId}/block")
     public ResponseEntity<?> blockUser(@PathVariable Long userId) {
         User user = userService.getUserById(userId);
+        // Здесь можно добавить логику блокировки, если нужно
 
         Map<String, String> response = new HashMap<>();
         response.put("message", "User blocked successfully");
@@ -109,6 +108,7 @@ public class AdminController {
     @PutMapping("/users/{userId}/activate")
     public ResponseEntity<?> activateUser(@PathVariable Long userId) {
         User user = userService.getUserById(userId);
+        // Здесь можно добавить логику активации, если нужно
 
         Map<String, String> response = new HashMap<>();
         response.put("message", "User activated successfully");
@@ -136,7 +136,7 @@ public class AdminController {
 
     // ========== CARD MANAGEMENT ==========
 
-    // Получить все карты (для администратора) с расшифрованными номерами
+    // Получить все карты (для администратора) с маскированными номерами
     @GetMapping("/cards")
     public ResponseEntity<Page<AdminCardResponse>> getAllCards(
             @RequestParam(defaultValue = "0") int page,
@@ -164,27 +164,36 @@ public class AdminController {
         return ResponseEntity.ok(response);
     }
 
-    // Блокировка карты администратором
-    @PutMapping("/cards/{cardNumber}/block")
-    public ResponseEntity<AdminCardResponse> blockCardAsAdmin(@PathVariable String cardNumber) {
-        Card card = cardService.getByCardNumber(cardNumber);
+    // Блокировка карты администратором по оригинальному номеру
+    @PutMapping("/cards/block")
+    public ResponseEntity<AdminCardResponse> blockCardAsAdmin(@RequestParam String cardNumber) {
+        // Шифруем номер для поиска в БД
+        String encryptedCardNumber = encryptionService.encrypt(cardNumber);
+
+        Card card = cardService.getByCardNumber(encryptedCardNumber);
         // Админ может блокировать любую карту без проверки владения
-        Card updatedCard = cardService.updateCardStatus(cardNumber, CardStatus.BLOCKED, card.getUser());
+        Card updatedCard = cardService.updateCardStatus(encryptedCardNumber, CardStatus.BLOCKED, card.getUser());
         return ResponseEntity.ok(convertToAdminCardResponse(updatedCard));
     }
 
-    // Активация карты администратором
-    @PutMapping("/cards/{cardNumber}/activate")
-    public ResponseEntity<AdminCardResponse> activateCardAsAdmin(@PathVariable String cardNumber) {
-        Card card = cardService.getByCardNumber(cardNumber);
-        Card updatedCard = cardService.updateCardStatus(cardNumber, CardStatus.ACTIVE, card.getUser());
+    // Активация карты администратором по оригинальному номеру
+    @PutMapping("/cards/activate")
+    public ResponseEntity<AdminCardResponse> activateCardAsAdmin(@RequestParam String cardNumber) {
+        // Шифруем номер для поиска в БД
+        String encryptedCardNumber = encryptionService.encrypt(cardNumber);
+
+        Card card = cardService.getByCardNumber(encryptedCardNumber);
+        Card updatedCard = cardService.updateCardStatus(encryptedCardNumber, CardStatus.ACTIVE, card.getUser());
         return ResponseEntity.ok(convertToAdminCardResponse(updatedCard));
     }
 
-    // Получить детальную информацию о карте (с расшифрованным номером)
-    @GetMapping("/cards/{cardNumber}/details")
-    public ResponseEntity<AdminCardResponse> getCardDetails(@PathVariable String cardNumber) {
-        Card card = cardService.getByCardNumber(cardNumber);
+    // Получить детальную информацию о карте по оригинальному номеру
+    @GetMapping("/cards/details")
+    public ResponseEntity<AdminCardResponse> getCardDetails(@RequestParam String cardNumber) {
+        // Шифруем номер для поиска в БД
+        String encryptedCardNumber = encryptionService.encrypt(cardNumber);
+
+        Card card = cardService.getByCardNumber(encryptedCardNumber);
         return ResponseEntity.ok(convertToAdminCardResponse(card));
     }
 
@@ -201,16 +210,39 @@ public class AdminController {
         return ResponseEntity.ok(convertToAdminCardResponse(card));
     }
 
-    // Получить карту по оригинальному номеру (админ)
-    @GetMapping("/cards/by-number")
-    public ResponseEntity<AdminCardResponse> getCardByOriginalNumberAsAdmin(
-            @RequestParam String cardNumber) {
-
+    // Удалить карту по оригинальному номеру (админ)
+    @DeleteMapping("/cards")
+    public ResponseEntity<?> deleteCardAsAdmin(@RequestParam String cardNumber) {
         // Шифруем номер для поиска в БД
         String encryptedCardNumber = encryptionService.encrypt(cardNumber);
 
         Card card = cardService.getByCardNumber(encryptedCardNumber);
-        return ResponseEntity.ok(convertToAdminCardResponse(card));
+        cardService.deleteCard(encryptedCardNumber, card.getUser());
+
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Card deleted successfully");
+        response.put("cardNumber", cardService.getMaskedCardNumber(card));
+
+        return ResponseEntity.ok(response);
+    }
+
+    // Получить карты по статусу (админ)
+    @GetMapping("/cards/by-status")
+    public ResponseEntity<Page<AdminCardResponse>> getCardsByStatus(
+            @RequestParam CardStatus status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        Pageable pageable = PageRequest.of(page, size);
+        // Нужно добавить метод в CardService для поиска по статусу
+        // Page<Card> cards = cardService.getCardsByStatus(status, pageable);
+
+        // Временно используем все карты с фильтрацией на стороне Java
+        Page<Card> allCards = cardService.getAllCards(pageable);
+        Page<Card> filteredCards = (Page<Card>) allCards.filter(card -> card.getStatus() == status);
+
+        Page<AdminCardResponse> response = filteredCards.map(this::convertToAdminCardResponse);
+        return ResponseEntity.ok(response);
     }
 
     // Преобразование User в UserResponse
@@ -224,9 +256,7 @@ public class AdminController {
         );
     }
 
-
-
-    // Преобразование Card в AdminCardResponse (ТОЛЬКО маскированный номер)
+    // Преобразование Card в AdminCardResponse (ТОЛЬКО с маскированным номером)
     private AdminCardResponse convertToAdminCardResponse(Card card) {
         String maskedNumber = cardService.getMaskedCardNumber(card);
 
