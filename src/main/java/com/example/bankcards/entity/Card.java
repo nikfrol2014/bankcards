@@ -1,5 +1,6 @@
 package com.example.bankcards.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -14,48 +15,46 @@ import java.util.List;
 @Data
 @Table(name = "cards")
 public class Card {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
 
-    @NotNull
-    @Column(name = "card_number", nullable = false, unique = true)
-    private String cardNumber; // Зашифрованный номер
+    @Id
+    @Column(name = "card_number", length = 255)
+    private String cardNumber; // Теперь это primary key
 
     @NotNull
     @Size(min = 2, max = 100)
     @Column(nullable = false)
-    private String owner; // Владелец карты
+    private String owner;
 
     @NotNull
     @Column(name = "expiry_date", nullable = false)
-    private LocalDate expiryDate; // Срок действия
+    private LocalDate expiryDate;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private CardStatus status; // Статус карты
+    private CardStatus status;
 
     @NotNull
     @Column(nullable = false, precision = 15, scale = 2)
-    private BigDecimal balance; // Баланс
+    private BigDecimal balance;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    private User user; // Владелец карты
+    @JsonIgnore
+    private User user;
 
     @OneToMany(mappedBy = "fromCard", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore
     private List<Transaction> sentTransactions;
 
     @OneToMany(mappedBy = "toCard", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore
     private List<Transaction> receivedTransactions;
 
-    ///////////////////////////////////////////////////////////
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
-    //////////////////////////////////////////////////////////
 
     public Card() {}
 
@@ -79,5 +78,4 @@ public class Card {
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
-
 }

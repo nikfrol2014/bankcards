@@ -28,14 +28,13 @@ public class TransactionService {
         cardService.validateCardForTransaction(fromCard);
         cardService.validateCardForTransaction(toCard);
 
-        // Проверяем достаточность средств
-        if (fromCard.getBalance().compareTo(amount) < 0) {
-            throw new InsufficientFundsException(
-                    fromCard.getId(),
-                    fromCard.getBalance().doubleValue(),
-                    amount.doubleValue()
-            );
+        // Проверяем, что это не перевод на ту же карту
+        if (fromCard.getCardNumber().equals(toCard.getCardNumber())) {
+            throw new IllegalArgumentException("Cannot transfer to the same card");
         }
+
+        // Проверяем достаточность средств
+        cardService.validateSufficientFunds(fromCard, amount);
 
         // Проверяем, что сумма положительная
         if (amount.compareTo(BigDecimal.ZERO) <= 0) {
@@ -56,24 +55,24 @@ public class TransactionService {
     }
 
     // Получить историю транзакций по карте
-    public Page<Transaction> getCardTransactions(Card card, Pageable pageable) {
-        return transactionRepository.findByCard(card, pageable);
+    public Page<Transaction> getCardTransactions(String cardNumber, Pageable pageable) {
+        return transactionRepository.findByCardNumber(cardNumber, pageable);
     }
 
     // Получить отправленные транзакции
-    public Page<Transaction> getSentTransactions(Card card, Pageable pageable) {
-        return transactionRepository.findByFromCardOrderByTransactionDateDesc(card, pageable);
+    public Page<Transaction> getSentTransactions(String cardNumber, Pageable pageable) {
+        return transactionRepository.findByFromCardCardNumberOrderByTransactionDateDesc(cardNumber, pageable);
     }
 
     // Получить полученные транзакции
-    public Page<Transaction> getReceivedTransactions(Card card, Pageable pageable) {
-        return transactionRepository.findByToCardOrderByTransactionDateDesc(card, pageable);
+    public Page<Transaction> getReceivedTransactions(String cardNumber, Pageable pageable) {
+        return transactionRepository.findByToCardCardNumberOrderByTransactionDateDesc(cardNumber, pageable);
     }
 
     // Найти транзакции за период
-    public Page<Transaction> getTransactionsByPeriod(Card card, java.time.LocalDateTime startDate,
+    public Page<Transaction> getTransactionsByPeriod(String cardNumber, java.time.LocalDateTime startDate,
                                                      java.time.LocalDateTime endDate, Pageable pageable) {
-        return transactionRepository.findByCardAndPeriod(card, startDate, endDate, pageable);
+        return transactionRepository.findByCardNumberAndPeriod(cardNumber, startDate, endDate, pageable);
     }
 
     // Найти транзакцию по ID

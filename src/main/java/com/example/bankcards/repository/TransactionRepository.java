@@ -16,23 +16,23 @@ import java.util.List;
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
 
     // Найти все транзакции по карте (отправленные и полученные)
-    @Query("SELECT t FROM Transaction t WHERE t.fromCard = :card OR t.toCard = :card ORDER BY t.transactionDate DESC")
-    Page<Transaction> findByCard(@Param("card") Card card, Pageable pageable);
+    @Query("SELECT t FROM Transaction t WHERE t.fromCard.cardNumber = :cardNumber OR t.toCard.cardNumber = :cardNumber ORDER BY t.transactionDate DESC")
+    Page<Transaction> findByCardNumber(@Param("cardNumber") String cardNumber, Pageable pageable);
 
     // Найти отправленные транзакции по карте
-    Page<Transaction> findByFromCardOrderByTransactionDateDesc(Card fromCard, Pageable pageable);
+    Page<Transaction> findByFromCardCardNumberOrderByTransactionDateDesc(String fromCardNumber, Pageable pageable);
 
     // Найти полученные транзакции по карте
-    Page<Transaction> findByToCardOrderByTransactionDateDesc(Card toCard, Pageable pageable);
+    Page<Transaction> findByToCardCardNumberOrderByTransactionDateDesc(String toCardNumber, Pageable pageable);
 
     // Найти транзакции за период
-    @Query("SELECT t FROM Transaction t WHERE (t.fromCard = :card OR t.toCard = :card) " +
+    @Query("SELECT t FROM Transaction t WHERE (t.fromCard.cardNumber = :cardNumber OR t.toCard.cardNumber = :cardNumber) " +
             "AND t.transactionDate BETWEEN :startDate AND :endDate ORDER BY t.transactionDate DESC")
-    Page<Transaction> findByCardAndPeriod(@Param("card") Card card,
-                                          @Param("startDate") LocalDateTime startDate,
-                                          @Param("endDate") LocalDateTime endDate,
-                                          Pageable pageable);
+    Page<Transaction> findByCardNumberAndPeriod(@Param("cardNumber") String cardNumber,
+                                                @Param("startDate") LocalDateTime startDate,
+                                                @Param("endDate") LocalDateTime endDate,
+                                                Pageable pageable);
 
-    // Проверить существование транзакций по карте (для каскадного удаления)
-    boolean existsByFromCardOrToCard(Card fromCard, Card toCard);
+    // Проверить существование транзакций по карте
+    boolean existsByFromCardCardNumberOrToCardCardNumber(String fromCardNumber, String toCardNumber);
 }

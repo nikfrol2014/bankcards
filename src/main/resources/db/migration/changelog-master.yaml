@@ -1,5 +1,7 @@
 databaseChangeLog:
   - include:
-      file: classpath:db/migration/changes/001-initial-schema.yaml
+      file: db/migration/changes/001-initial-schema.yaml
   - include:
-      file: classpath:db/migration/changes/002-insert-test-data.yaml
+      file: db/migration/changes/002-insert-test-data.yaml
+  - include:
+      file: db/migration/changes/003-simplified-restructure.yaml

@@ -1,0 +1,43 @@
+databaseChangeLog:
+  - changeSet:
+      id: 006-clean-and-restructure
+      author: bank_system
+      changes:
+        # Очищаем все данные и пересоздаем структуру
+        - sql:
+            sql: "DROP TABLE IF EXISTS transactions CASCADE"
+        - sql:
+            sql: "DROP TABLE IF EXISTS cards CASCADE"
+        - sql:
+            sql: "CREATE TABLE cards (
+                  card_number VARCHAR(255) PRIMARY KEY,
+                  owner VARCHAR(100) NOT NULL,
+                  expiry_date DATE NOT NULL,
+                  status VARCHAR(20) NOT NULL,
+                  balance DECIMAL(15,2) NOT NULL,
+                  user_id BIGINT NOT NULL,
+                  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                  CONSTRAINT fk_cards_user_id FOREIGN KEY (user_id) REFERENCES users(id)
+                )"
+        - sql:
+            sql: "CREATE INDEX idx_cards_user_id ON cards(user_id)"
+        - sql:
+            sql: "CREATE INDEX idx_cards_status ON cards(status)"
+        - sql:
+            sql: "CREATE TABLE transactions (
+                  id BIGSERIAL PRIMARY KEY,
+                  from_card_number VARCHAR(255) NOT NULL,
+                  to_card_number VARCHAR(255) NOT NULL,
+                  amount DECIMAL(15,2) NOT NULL,
+                  transaction_date TIMESTAMP NOT NULL,
+                  description VARCHAR(500),
+                  CONSTRAINT fk_transactions_from_card_number FOREIGN KEY (from_card_number) REFERENCES cards(card_number),
+                  CONSTRAINT fk_transactions_to_card_number FOREIGN KEY (to_card_number) REFERENCES cards(card_number)
+                )"
+        - sql:
+            sql: "CREATE INDEX idx_transactions_from_card_number ON transactions(from_card_number)"
+        - sql:
+            sql: "CREATE INDEX idx_transactions_to_card_number ON transactions(to_card_number)"
+        - sql:
+            sql: "CREATE INDEX idx_transactions_date ON transactions(transaction_date)"

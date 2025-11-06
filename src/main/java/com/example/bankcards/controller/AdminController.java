@@ -1,5 +1,6 @@
 package com.example.bankcards.controller;
 
+import com.example.bankcards.dto.AdminCardResponse;
 import com.example.bankcards.dto.UserResponse;
 import com.example.bankcards.entity.Card;
 import com.example.bankcards.entity.CardStatus;
@@ -8,7 +9,9 @@ import com.example.bankcards.entity.User;
 import com.example.bankcards.exception.CardNotFoundException;
 import com.example.bankcards.exception.UserNotFoundException;
 import com.example.bankcards.service.CardService;
+import com.example.bankcards.service.EncryptionService;
 import com.example.bankcards.service.UserService;
+import jakarta.validation.constraints.DecimalMin;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -18,6 +21,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -31,6 +35,9 @@ public class AdminController {
 
     @Autowired
     private CardService cardService;
+
+    @Autowired
+    private EncryptionService encryptionService;
 
     // ========== USER MANAGEMENT ==========
 
@@ -89,8 +96,6 @@ public class AdminController {
     @PutMapping("/users/{userId}/block")
     public ResponseEntity<?> blockUser(@PathVariable Long userId) {
         User user = userService.getUserById(userId);
-        // Здесь можно добавить логику блокировки
-        // Например, установить поле isActive = false
 
         Map<String, String> response = new HashMap<>();
         response.put("message", "User blocked successfully");
@@ -104,7 +109,6 @@ public class AdminController {
     @PutMapping("/users/{userId}/activate")
     public ResponseEntity<?> activateUser(@PathVariable Long userId) {
         User user = userService.getUserById(userId);
-        // Активация пользователя
 
         Map<String, String> response = new HashMap<>();
         response.put("message", "User activated successfully");
@@ -125,27 +129,29 @@ public class AdminController {
         stats.put("totalUsers", totalUsers);
         stats.put("adminUsers", adminUsers);
         stats.put("regularUsers", regularUsers);
-        stats.put("adminPercentage", (double) adminUsers / totalUsers * 100);
+        stats.put("adminPercentage", totalUsers > 0 ? (double) adminUsers / totalUsers * 100 : 0);
 
         return ResponseEntity.ok(stats);
     }
 
     // ========== CARD MANAGEMENT ==========
 
-    // Получить все карты (для администратора)
+    // Получить все карты (для администратора) с расшифрованными номерами
     @GetMapping("/cards")
-    public ResponseEntity<Page<Card>> getAllCards(
+    public ResponseEntity<Page<AdminCardResponse>> getAllCards(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
         Pageable pageable = PageRequest.of(page, size);
         Page<Card> cards = cardService.getAllCards(pageable);
-        return ResponseEntity.ok(cards);
+
+        Page<AdminCardResponse> response = cards.map(this::convertToAdminCardResponse);
+        return ResponseEntity.ok(response);
     }
 
     // Получить все карты пользователя (админская версия)
     @GetMapping("/users/{userId}/cards")
-    public ResponseEntity<Page<Card>> getUserCards(
+    public ResponseEntity<Page<AdminCardResponse>> getUserCards(
             @PathVariable Long userId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
@@ -153,24 +159,58 @@ public class AdminController {
         User user = userService.getUserById(userId);
         Pageable pageable = PageRequest.of(page, size);
         Page<Card> cards = cardService.getUserCards(user, pageable);
-        return ResponseEntity.ok(cards);
+
+        Page<AdminCardResponse> response = cards.map(this::convertToAdminCardResponse);
+        return ResponseEntity.ok(response);
     }
 
     // Блокировка карты администратором
-    @PutMapping("/cards/{cardId}/block")
-    public ResponseEntity<Card> blockCardAsAdmin(@PathVariable Long cardId) {
-        Card card = cardService.findById(cardId)
-                .orElseThrow(() -> new CardNotFoundException(cardId));
+    @PutMapping("/cards/{cardNumber}/block")
+    public ResponseEntity<AdminCardResponse> blockCardAsAdmin(@PathVariable String cardNumber) {
+        Card card = cardService.getByCardNumber(cardNumber);
         // Админ может блокировать любую карту без проверки владения
-        return ResponseEntity.ok(cardService.updateCardStatus(cardId, CardStatus.BLOCKED, card.getUser()));
+        Card updatedCard = cardService.updateCardStatus(cardNumber, CardStatus.BLOCKED, card.getUser());
+        return ResponseEntity.ok(convertToAdminCardResponse(updatedCard));
     }
 
     // Активация карты администратором
-    @PutMapping("/cards/{cardId}/activate")
-    public ResponseEntity<Card> activateCardAsAdmin(@PathVariable Long cardId) {
-        Card card = cardService.findById(cardId)
-                .orElseThrow(() -> new CardNotFoundException(cardId));
-        return ResponseEntity.ok(cardService.updateCardStatus(cardId, CardStatus.ACTIVE, card.getUser()));
+    @PutMapping("/cards/{cardNumber}/activate")
+    public ResponseEntity<AdminCardResponse> activateCardAsAdmin(@PathVariable String cardNumber) {
+        Card card = cardService.getByCardNumber(cardNumber);
+        Card updatedCard = cardService.updateCardStatus(cardNumber, CardStatus.ACTIVE, card.getUser());
+        return ResponseEntity.ok(convertToAdminCardResponse(updatedCard));
+    }
+
+    // Получить детальную информацию о карте (с расшифрованным номером)
+    @GetMapping("/cards/{cardNumber}/details")
+    public ResponseEntity<AdminCardResponse> getCardDetails(@PathVariable String cardNumber) {
+        Card card = cardService.getByCardNumber(cardNumber);
+        return ResponseEntity.ok(convertToAdminCardResponse(card));
+    }
+
+    // Обновить баланс карты по оригинальному номеру (админ)
+    @PutMapping("/cards/balance")
+    public ResponseEntity<AdminCardResponse> updateCardBalanceAsAdmin(
+            @RequestParam String cardNumber, // Оригинальный номер
+            @RequestParam @DecimalMin(value = "0.00", message = "Balance must be positive") BigDecimal newBalance) {
+
+        // Шифруем номер для поиска в БД
+        String encryptedCardNumber = encryptionService.encrypt(cardNumber);
+
+        Card card = cardService.updateCardBalanceAsAdmin(encryptedCardNumber, newBalance);
+        return ResponseEntity.ok(convertToAdminCardResponse(card));
+    }
+
+    // Получить карту по оригинальному номеру (админ)
+    @GetMapping("/cards/by-number")
+    public ResponseEntity<AdminCardResponse> getCardByOriginalNumberAsAdmin(
+            @RequestParam String cardNumber) {
+
+        // Шифруем номер для поиска в БД
+        String encryptedCardNumber = encryptionService.encrypt(cardNumber);
+
+        Card card = cardService.getByCardNumber(encryptedCardNumber);
+        return ResponseEntity.ok(convertToAdminCardResponse(card));
     }
 
     // Преобразование User в UserResponse
@@ -181,6 +221,26 @@ public class AdminController {
                 user.getEmail(),
                 user.getRole(),
                 user.getCreatedAt()
+        );
+    }
+
+
+
+    // Преобразование Card в AdminCardResponse (с расшифрованным номером)
+    private AdminCardResponse convertToAdminCardResponse(Card card) {
+        String decryptedNumber = cardService.getDecryptedCardNumber(card);
+        String maskedNumber = cardService.getMaskedCardNumber(card);
+
+        return new AdminCardResponse(
+                card.getCardNumber(), // Зашифрованный номер (ID)
+                decryptedNumber,      // Расшифрованный номер
+                maskedNumber,         // Замаскированный номер
+                card.getOwner(),
+                card.getExpiryDate(),
+                card.getStatus(),
+                card.getBalance(),
+                card.getUser().getId(),
+                card.getUser().getUsername()
         );
     }
 }

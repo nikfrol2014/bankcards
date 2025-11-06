@@ -6,6 +6,7 @@ import com.example.bankcards.entity.User;
 import com.example.bankcards.exception.CardBlockedException;
 import com.example.bankcards.exception.CardExpiredException;
 import com.example.bankcards.exception.CardNotFoundException;
+import com.example.bankcards.exception.InsufficientFundsException;
 import com.example.bankcards.repository.CardRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -25,26 +26,44 @@ public class CardService {
     @Autowired
     private EncryptionService encryptionService;
 
-    // Создать новую карту
+    // Создать новую карту с шифрованием номера
     public Card createCard(Card card, User user) {
-        // Шифруем номер карты перед сохранением
         String encryptedCardNumber = encryptionService.encrypt(card.getCardNumber());
         card.setCardNumber(encryptedCardNumber);
         card.setUser(user);
         card.setStatus(CardStatus.ACTIVE);
-        card.setBalance(BigDecimal.ZERO);
+
+        // Используем переданный баланс или устанавливаем 1000.00 по умолчанию
+        if (card.getBalance() == null) {
+            card.setBalance(new BigDecimal("1000.00"));
+        }
 
         return cardRepository.save(card);
     }
 
-    // Найти карту по ID
-    public Optional<Card> findById(Long id) {
-        return cardRepository.findById(id);
+    // Найти карту по номеру (зашифрованному)
+    public Optional<Card> findByCardNumber(String cardNumber) {
+        return cardRepository.findById(cardNumber);
     }
 
-    // Найти карту по ID и пользователю (проверка владения)
-    public Optional<Card> findByIdAndUser(Long id, User user) {
-        return cardRepository.findByIdAndUser(id, user);
+    // Найти карту по номеру и пользователю (проверка владения)
+    public Optional<Card> findByCardNumberAndUser(String cardNumber, User user) {
+        return cardRepository.findByCardNumberAndUser(cardNumber, user);
+    }
+
+    // Получить карту по номеру или выбросить исключение
+    public Card getByCardNumber(String cardNumber) {
+        return cardRepository.findById(cardNumber)
+                .orElseThrow(() -> new CardNotFoundException("Card not found with number: " + cardNumber));
+    }
+
+    // Получить карту по номеру и пользователю или выбросить исключение
+    public Card getByCardNumberAndUser(String cardNumber, User user) {
+        return cardRepository.findByCardNumberAndUser(cardNumber, user)
+                .orElseThrow(() -> {
+                    String masked = getMaskedFallback(cardNumber);
+                    return new CardNotFoundException("Card not found: " + masked + " - access denied");
+                });
     }
 
     // Получить все карты пользователя с пагинацией
@@ -63,19 +82,15 @@ public class CardService {
     }
 
     // Обновить статус карты
-    public Card updateCardStatus(Long cardId, CardStatus newStatus, User user) {
-        Card card = cardRepository.findByIdAndUser(cardId, user)
-                .orElseThrow(() -> new CardNotFoundException("Card not found with id: " + cardId + " or access denied"));
-
+    public Card updateCardStatus(String cardNumber, CardStatus newStatus, User user) {
+        Card card = getByCardNumberAndUser(cardNumber, user);
         card.setStatus(newStatus);
         return cardRepository.save(card);
     }
 
     // Обновить баланс карты
-    public Card updateBalance(Long cardId, BigDecimal newBalance) {
-        Card card = cardRepository.findById(cardId)
-                .orElseThrow(() -> new CardNotFoundException(cardId));
-
+    public Card updateBalance(String cardNumber, BigDecimal newBalance) {
+        Card card = getByCardNumber(cardNumber);
         card.setBalance(newBalance);
         return cardRepository.save(card);
     }
@@ -88,14 +103,28 @@ public class CardService {
 
     // Валидация карты для транзакции (с исключениями)
     public void validateCardForTransaction(Card card) {
+        String maskedNumber = getMaskedCardNumber(card);
+
         if (card.getStatus() == CardStatus.BLOCKED) {
-            throw new CardBlockedException(card.getId());
+            throw new CardBlockedException("Card is blocked: " + maskedNumber);
         }
         if (card.getExpiryDate().isBefore(LocalDate.now())) {
-            throw new CardExpiredException(card.getId());
+            throw new CardExpiredException("Card is expired: " + maskedNumber);
         }
         if (card.getStatus() != CardStatus.ACTIVE) {
-            throw new CardBlockedException("Card is not active: " + card.getId());
+            throw new CardBlockedException("Card is not active: " + maskedNumber);
+        }
+    }
+
+    // Fallback маскирование для случаев, когда карта не найдена
+    private String getMaskedFallback(String cardNumber) {
+        try {
+            // Пытаемся расшифровать и замаскировать
+            String decrypted = encryptionService.decrypt(cardNumber);
+            return maskCardNumber(decrypted);
+        } catch (Exception e) {
+            // Если не получается, используем общую маску
+            return "**** **** **** ****";
         }
     }
 
@@ -109,17 +138,65 @@ public class CardService {
 
     // Получить замаскированный номер карты
     public String getMaskedCardNumber(Card card) {
-        String decryptedNumber = encryptionService.decrypt(card.getCardNumber());
-        return maskCardNumber(decryptedNumber);
+        try {
+            // Пытаемся расшифровать номер карты
+            String decryptedNumber = encryptionService.decrypt(card.getCardNumber());
+            return maskCardNumber(decryptedNumber);
+        } catch (Exception e) {
+            // Если не получается расшифровать, используем fallback
+            return maskCardNumber("0000" + card.getCardNumber().hashCode() % 10000);
+        }
+    }
+
+    // Получить оригинальный номер карты (для админа)
+    public String getDecryptedCardNumber(Card card) {
+        try {
+            return encryptionService.decrypt(card.getCardNumber());
+        } catch (Exception e) {
+            return "DECRYPTION_ERROR";
+        }
+    }
+
+    // Обновить баланс карты (для админа или владельца)
+    public Card updateCardBalance(String cardNumber, BigDecimal newBalance, User user) {
+        Card card = getByCardNumberAndUser(cardNumber, user);
+        card.setBalance(newBalance);
+        return cardRepository.save(card);
+    }
+
+    // Обновить баланс карты (только для админа - без проверки владения)
+    public Card updateCardBalanceAsAdmin(String cardNumber, BigDecimal newBalance) {
+        Card card = getByCardNumber(cardNumber);
+        card.setBalance(newBalance);
+        return cardRepository.save(card);
     }
 
     // Маскирование номера карты (**** **** **** 1234)
     private String maskCardNumber(String cardNumber) {
         if (cardNumber == null || cardNumber.length() < 4) {
-            return "****";
+            return "**** **** **** ****";
         }
-        String lastFour = cardNumber.substring(cardNumber.length() - 4);
+
+        // Оставляем только цифры
+        String digitsOnly = cardNumber.replaceAll("[^0-9]", "");
+
+        if (digitsOnly.length() < 4) {
+            return "**** **** **** ****";
+        }
+
+        String lastFour = digitsOnly.substring(digitsOnly.length() - 4);
         return "**** **** **** " + lastFour;
+    }
+
+    // Проверка достаточности средств
+    public void validateSufficientFunds(Card card, BigDecimal amount) {
+        if (card.getBalance().compareTo(amount) < 0) {
+            String maskedNumber = getMaskedCardNumber(card);
+            throw new InsufficientFundsException(
+                    String.format("Insufficient funds on card %s: balance=%.2f, required=%.2f",
+                            maskedNumber, card.getBalance().doubleValue(), amount.doubleValue())
+            );
+        }
     }
 
     // Сохранить карту
@@ -128,13 +205,18 @@ public class CardService {
     }
 
     // Удалить карту
-    public void deleteCard(Long cardId, User user) {
-        Card card = cardRepository.findByIdAndUser(cardId, user)
-                .orElseThrow(() -> new CardNotFoundException("Card not found with id: " + cardId + " or access denied"));
+    public void deleteCard(String cardNumber, User user) {
+        Card card = getByCardNumberAndUser(cardNumber, user);
         cardRepository.delete(card);
     }
 
+    // Получить все карты (для админа)
     public Page<Card> getAllCards(Pageable pageable) {
         return cardRepository.findAll(pageable);
+    }
+
+    // Проверить существование карты по номеру
+    public boolean existsByCardNumber(String cardNumber) {
+        return cardRepository.existsByCardNumber(cardNumber);
     }
 }

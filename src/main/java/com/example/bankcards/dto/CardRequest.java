@@ -1,15 +1,15 @@
 package com.example.bankcards.dto;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Data
 public class CardRequest {
     @NotBlank(message = "Card number is required")
+    @Pattern(regexp = "^[0-9]{16}$", message = "Card number must be 16 digits")
     private String cardNumber;
 
     @NotBlank(message = "Owner name is required")
@@ -19,11 +19,15 @@ public class CardRequest {
     @NotNull(message = "Expiry date is required")
     private LocalDate expiryDate;
 
+    @DecimalMin(value = "0.00", message = "Balance must be positive")
+    private BigDecimal balance; // Опционально - начальный баланс
 
     public CardRequest() {}
-    public CardRequest(String cardNumber, String owner, LocalDate expiryDate) {
+
+    public CardRequest(String cardNumber, String owner, LocalDate expiryDate, BigDecimal balance) {
         this.cardNumber = cardNumber;
         this.owner = owner;
         this.expiryDate = expiryDate;
+        this.balance = balance;
     }
 }

@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface CardRepository extends JpaRepository<Card, Long> {
+public interface CardRepository extends JpaRepository<Card, String> { // ID теперь String!
 
     // Найти все карты пользователя с пагинацией
     Page<Card> findByUser(User user, Pageable pageable);
@@ -22,11 +22,8 @@ public interface CardRepository extends JpaRepository<Card, Long> {
     // Найти все карты пользователя по статусу с пагинацией
     Page<Card> findByUserAndStatus(User user, CardStatus status, Pageable pageable);
 
-    // Найти карту по номеру (для проверки уникальности)
-    Optional<Card> findByCardNumber(String cardNumber);
-
-    // Найти карту по ID и пользователю (для проверки владения)
-    Optional<Card> findByIdAndUser(Long id, User user);
+    // Найти карту по номеру и пользователю (проверка владения)
+    Optional<Card> findByCardNumberAndUser(String cardNumber, User user);
 
     // Проверить существование карты по номеру
     boolean existsByCardNumber(String cardNumber);

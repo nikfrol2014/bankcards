@@ -5,8 +5,8 @@ public class InsufficientFundsException extends RuntimeException {
         super(message);
     }
 
-    public InsufficientFundsException(Long cardId, Double balance, Double amount) {
-        super(String.format("Insufficient funds on card %d: balance=%.2f, required=%.2f",
-                cardId, balance, amount));
+    public InsufficientFundsException(String maskedCardNumber, Double balance, Double amount) {
+        super(String.format("Insufficient funds on card %s: balance=%.2f, required=%.2f",
+                maskedCardNumber, balance, amount));
     }
 }

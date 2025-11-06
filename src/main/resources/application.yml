@@ -58,5 +58,6 @@ jwt:
   secret: ${JWT_SECRET:myVerySecretKeyForJWTGeneration123!}
   expiration: 86400000 # 24 hours
 
-  encryption:
-    secret-key: my16bytekey12345 # Ключ для шифрования номеров карт
+# НАСТРОЙКИ ШИФРОВАНИЯ (ОТДЕЛЬНО!)
+encryption:
+  secret-key: my16bytekey12345 # 16 символов для AES-128

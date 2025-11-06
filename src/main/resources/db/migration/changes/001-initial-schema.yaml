@@ -44,22 +44,6 @@ databaseChangeLog:
                   type: timestamp
                   defaultValueComputed: CURRENT_TIMESTAMP
 
-        - createIndex:
-            tableName: users
-            indexName: idx_users_username
-            columns:
-              - column:
-                  name: username
-                  type: varchar(50)
-
-        - createIndex:
-            tableName: users
-            indexName: idx_users_email
-            columns:
-              - column:
-                  name: email
-                  type: varchar(100)
-
   - changeSet:
       id: 002-create-cards-table
       author: bank_system
@@ -68,17 +52,10 @@ databaseChangeLog:
             tableName: cards
             columns:
               - column:
-                  name: id
-                  type: bigserial
-                  autoIncrement: true
-                  constraints:
-                    primaryKey: true
-                    nullable: false
-              - column:
                   name: card_number
                   type: varchar(255)
                   constraints:
-                    unique: true
+                    primaryKey: true
                     nullable: false
               - column:
                   name: owner
@@ -147,19 +124,19 @@ databaseChangeLog:
                     primaryKey: true
                     nullable: false
               - column:
-                  name: from_card_id
-                  type: bigint
+                  name: from_card_number
+                  type: varchar(255)
                   constraints:
                     nullable: false
-                    foreignKeyName: fk_transactions_from_card_id
-                    references: cards(id)
+                    foreignKeyName: fk_transactions_from_card_number
+                    references: cards(card_number)
               - column:
-                  name: to_card_id
-                  type: bigint
+                  name: to_card_number
+                  type: varchar(255)
                   constraints:
                     nullable: false
-                    foreignKeyName: fk_transactions_to_card_id
-                    references: cards(id)
+                    foreignKeyName: fk_transactions_to_card_number
+                    references: cards(card_number)
               - column:
                   name: amount
                   type: decimal(15,2)
@@ -176,19 +153,19 @@ databaseChangeLog:
 
         - createIndex:
             tableName: transactions
-            indexName: idx_transactions_from_card_id
+            indexName: idx_transactions_from_card_number
             columns:
               - column:
-                  name: from_card_id
-                  type: bigint
+                  name: from_card_number
+                  type: varchar(255)
 
         - createIndex:
             tableName: transactions
-            indexName: idx_transactions_to_card_id
+            indexName: idx_transactions_to_card_number
             columns:
               - column:
-                  name: to_card_id
-                  type: bigint
+                  name: to_card_number
+                  type: varchar(255)
 
         - createIndex:
             tableName: transactions

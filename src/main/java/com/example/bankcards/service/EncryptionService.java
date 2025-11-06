@@ -11,14 +11,21 @@ import java.util.Base64;
 @Service
 public class EncryptionService {
 
-    @Value("${encryption.secret-key:mySuperSecretKey123}") // В продакшене использовать env variables
+    @Value("${encryption.secret-key:my16bytekey12345!}")
     private String secretKey;
 
     private static final String ALGORITHM = "AES";
 
+    private byte[] getValidKey() {
+        byte[] keyBytes = secretKey.getBytes(StandardCharsets.UTF_8);
+        byte[] validKey = new byte[16];
+        System.arraycopy(keyBytes, 0, validKey, 0, Math.min(keyBytes.length, 16));
+        return validKey;
+    }
+
     public String encrypt(String data) {
         try {
-            SecretKeySpec keySpec = new SecretKeySpec(secretKey.getBytes(StandardCharsets.UTF_8), ALGORITHM);
+            SecretKeySpec keySpec = new SecretKeySpec(getValidKey(), ALGORITHM);
             Cipher cipher = Cipher.getInstance(ALGORITHM);
             cipher.init(Cipher.ENCRYPT_MODE, keySpec);
             byte[] encrypted = cipher.doFinal(data.getBytes(StandardCharsets.UTF_8));
@@ -30,7 +37,7 @@ public class EncryptionService {
 
     public String decrypt(String encryptedData) {
         try {
-            SecretKeySpec keySpec = new SecretKeySpec(secretKey.getBytes(StandardCharsets.UTF_8), ALGORITHM);
+            SecretKeySpec keySpec = new SecretKeySpec(getValidKey(), ALGORITHM);
             Cipher cipher = Cipher.getInstance(ALGORITHM);
             cipher.init(Cipher.DECRYPT_MODE, keySpec);
             byte[] decoded = Base64.getDecoder().decode(encryptedData);

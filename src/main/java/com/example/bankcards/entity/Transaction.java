@@ -11,35 +11,35 @@ import java.time.LocalDateTime;
 @Data
 @Table(name = "transactions")
 public class Transaction {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "from_card_id", nullable = false)
-    private Card fromCard; // Карта отправителя
+    @JoinColumn(name = "from_card_number", nullable = false) // Теперь ссылается на card_number
+    private Card fromCard;
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "to_card_id", nullable = false)
-    private Card toCard; // Карта получателя
+    @JoinColumn(name = "to_card_number", nullable = false) // Теперь ссылается на card_number
+    private Card toCard;
 
     @NotNull
     @Column(nullable = false, precision = 15, scale = 2)
-    private BigDecimal amount; // Сумма перевода
+    private BigDecimal amount;
 
     @NotNull
     @Column(nullable = false)
-    private LocalDateTime transactionDate; // Дата и время перевода
+    private LocalDateTime transactionDate;
 
     @Column(length = 500)
-    private String description; // Описание перевода
+    private String description;
 
     public Transaction() {}
 
-    public Transaction(Card fromCard, Card toCard, BigDecimal amount,
-                       String description) {
+    public Transaction(Card fromCard, Card toCard, BigDecimal amount, String description) {
         this.fromCard = fromCard;
         this.toCard = toCard;
         this.amount = amount;

@@ -38,7 +38,7 @@ databaseChangeLog:
       - insert:
           tableName: cards
           columns:
-            - column: {name: card_number, value: "encrypted_4111111111111111"}
+            - column: {name: card_number, value: "Nj0RRQL9mvNhBh7DfNHbOHrVbNFf2gXt/a8eAaX1R8E="}
             - column: {name: owner, value: "IVAN IVANOV"}
             - column: {name: expiry_date, value: "2026-12-31"}  # Будущая дата
             - column: {name: status, value: ACTIVE}
@@ -48,7 +48,7 @@ databaseChangeLog:
       - insert:
           tableName: cards
           columns:
-            - column: {name: card_number, value: "encrypted_4222222222222222"}
+            - column: {name: card_number, value: "EF4HxpKIujLwK1c1Zn8kCHrVbNFf2gXt/a8eAaX1R8E="}
             - column: {name: owner, value: "IVAN IVANOV"}
             - column: {name: expiry_date, value: "2026-06-30"}  # Будущая дата
             - column: {name: status, value: ACTIVE}
@@ -58,7 +58,7 @@ databaseChangeLog:
       - insert:
           tableName: cards
           columns:
-            - column: {name: card_number, value: "encrypted_4333333333333333"}
+            - column: {name: card_number, value: "HX3dZcMJYfMUZ/Z8VsYB9nrVbNFf2gXt/a8eAaX1R8E="}
             - column: {name: owner, value: "IVAN IVANOV"}
             - column: {name: expiry_date, value: "2024-03-31"}  # Оставить expired для теста
             - column: {name: status, value: BLOCKED}
@@ -69,7 +69,7 @@ databaseChangeLog:
       - insert:
           tableName: cards
           columns:
-            - column: {name: card_number, value: "encrypted_4555555555555555"}
+            - column: {name: card_number, value: "N7PAnodLwra7YVqE4iOKuHrVbNFf2gXt/a8eAaX1R8E="}
             - column: {name: owner, value: "PETR PETROV"}
             - column: {name: expiry_date, value: "2027-01-31"}  # Будущая дата
             - column: {name: status, value: ACTIVE}
@@ -79,7 +79,7 @@ databaseChangeLog:
       - insert:
           tableName: cards
           columns:
-            - column: {name: card_number, value: "encrypted_4666666666666666"}
+            - column: {name: card_number, value: "lbg6au9eWxlM8ulxE+xOCHrVbNFf2gXt/a8eAaX1R8E="}
             - column: {name: owner, value: "PETR PETROV"}
             - column: {name: expiry_date, value: "2023-12-31"}  # Оставить expired для теста
             - column: {name: status, value: EXPIRED}
@@ -90,7 +90,7 @@ databaseChangeLog:
       - insert:
           tableName: cards
           columns:
-            - column: {name: card_number, value: "encrypted_4777777777777777"}
+            - column: {name: card_number, value: "hmvPkwNEEtq9HjTVWq3aJnrVbNFf2gXt/a8eAaX1R8E="}
             - column: {name: owner, value: "ADMIN ADMINOV"}
             - column: {name: expiry_date, value: "2028-05-31"}  # Будущая дата
             - column: {name: status, value: ACTIVE}
@@ -100,7 +100,7 @@ databaseChangeLog:
       - insert:
           tableName: cards
           columns:
-            - column: {name: card_number, value: "encrypted_4888888888888888"}
+            - column: {name: card_number, value: "P2sY0PsB/ZuysGCTl9oP1XrVbNFf2gXt/a8eAaX1R8E="}
             - column: {name: owner, value: "ADMIN ADMINOV"}
             - column: {name: expiry_date, value: "2026-08-31"}  # Будущая дата
             - column: {name: status, value: ACTIVE}
