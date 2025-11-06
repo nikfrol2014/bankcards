@@ -67,21 +67,18 @@ public class SecurityConfig {
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .anyRequest().permitAll()  // РАЗРЕШИТЬ ВСЕ ДЛЯ ТЕСТИРОВАНИЯ
+                        // PUBLIC endpoints
+                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
+
+                        // PROTECTED endpoints
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/cards/**", "/api/transactions/**").hasAnyRole("USER", "ADMIN")
+
+                        .anyRequest().authenticated()
                 );
-//                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-//                .authorizeHttpRequests(auth -> auth
-//                        // PUBLIC endpoints
-//                        .requestMatchers("/api/auth/**").permitAll()
-//                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
-//
-//                        // PROTECTED endpoints
-//                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
-//                        .requestMatchers("/api/cards/**", "/api/transactions/**").hasAnyRole("USER", "ADMIN")
-//
-//                        .anyRequest().authenticated()
-//                );
 
         http.authenticationProvider(authenticationProvider());
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
