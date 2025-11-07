@@ -5,8 +5,8 @@ info:
   description: REST API for managing bank cards with JWT authentication
   version: 1.0.0
   contact:
-    name: Bank Cards Team
-    email: support@bankcards.com
+    name: Frolov Nikita Macsimovich
+    email: nikitka_frolov_2014@inbox.ru
 
 servers:
   - url: http://localhost:8080
