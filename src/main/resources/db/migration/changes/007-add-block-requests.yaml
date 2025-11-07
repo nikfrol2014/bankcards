@@ -1,0 +1,75 @@
+databaseChangeLog:
+  - changeSet:
+      id: 011-create-block-requests-table
+      author: bank_system
+      changes:
+        - createTable:
+            tableName: block_requests
+            columns:
+              - column:
+                  name: id
+                  type: bigserial
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: card_number
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_block_requests_card_number
+                    references: cards(card_number)
+              - column:
+                  name: user_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_block_requests_user_id
+                    references: users(id)
+              - column:
+                  name: request_date
+                  type: timestamp
+                  constraints:
+                    nullable: false
+              - column:
+                  name: reason
+                  type: varchar(500)
+              - column:
+                  name: status
+                  type: varchar(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: processed_date
+                  type: timestamp
+              - column:
+                  name: processed_by
+                  type: bigint
+                  constraints:
+                    foreignKeyName: fk_block_requests_processed_by
+                    references: users(id)
+
+        - createIndex:
+            tableName: block_requests
+            indexName: idx_block_requests_status
+            columns:
+              - column:
+                  name: status
+                  type: varchar(20)
+
+        - createIndex:
+            tableName: block_requests
+            indexName: idx_block_requests_card_number
+            columns:
+              - column:
+                  name: card_number
+                  type: varchar(255)
+
+        - createIndex:
+            tableName: block_requests
+            indexName: idx_block_requests_user_id
+            columns:
+              - column:
+                  name: user_id
+                  type: bigint

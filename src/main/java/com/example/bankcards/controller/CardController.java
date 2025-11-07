@@ -1,7 +1,9 @@
 package com.example.bankcards.controller;
 
+import com.example.bankcards.dto.BlockRequestResponse;
 import com.example.bankcards.dto.CardRequest;
 import com.example.bankcards.dto.CardResponse;
+import com.example.bankcards.entity.BlockRequest;
 import com.example.bankcards.entity.Card;
 import com.example.bankcards.entity.CardStatus;
 import com.example.bankcards.entity.User;
@@ -87,22 +89,6 @@ public class CardController {
         return ResponseEntity.ok(card.getBalance());
     }
 
-    // Блокировать карту по оригинальному номеру
-    @PutMapping("/block")
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
-    public ResponseEntity<CardResponse> blockCard(
-            @AuthenticationPrincipal UserDetails userDetails,
-            @RequestParam String cardNumber) { // Оригинальный номер
-
-        User user = userService.findByUsername(userDetails.getUsername());
-
-        // Шифруем номер для поиска в БД
-        String encryptedCardNumber = encryptionService.encrypt(cardNumber);
-
-        Card card = cardService.updateCardStatus(encryptedCardNumber, CardStatus.BLOCKED, user);
-        return ResponseEntity.ok(convertToCardResponse(card));
-    }
-
     // Активировать карту по оригинальному номеру
     @PutMapping("/activate")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
@@ -134,6 +120,51 @@ public class CardController {
 
         Page<CardResponse> response = cards.map(this::convertToCardResponse);
         return ResponseEntity.ok(response);
+    }
+
+    // Запрос на блокировку карты (вместо мгновенной блокировки)
+    @PostMapping("/block-request")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    public ResponseEntity<BlockRequestResponse> requestCardBlock(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam String cardNumber, // Оригинальный номер
+            @RequestParam(required = false) String reason) {
+
+        User user = userService.findByUsername(userDetails.getUsername());
+        BlockRequest request = cardService.requestCardBlock(cardNumber, user, reason);
+
+        return ResponseEntity.ok(convertToBlockRequestResponse(request));
+    }
+
+    // Получить свои запросы на блокировку
+    @GetMapping("/block-requests")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    public ResponseEntity<Page<BlockRequestResponse>> getUserBlockRequests(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        User user = userService.findByUsername(userDetails.getUsername());
+        Pageable pageable = PageRequest.of(page, size, Sort.by("requestDate").descending());
+        Page<BlockRequest> requests = cardService.getUserBlockRequests(user, pageable);
+
+        Page<BlockRequestResponse> response = requests.map(this::convertToBlockRequestResponse);
+        return ResponseEntity.ok(response);
+    }
+
+    // Убираем старый endpoint мгновенной блокировки (или оставляем только для админа)
+    @PutMapping("/block")
+    @PreAuthorize("hasRole('ADMIN')") // Теперь только для админа
+    public ResponseEntity<CardResponse> blockCard(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam String cardNumber) {
+
+        User user = userService.findByUsername(userDetails.getUsername());
+        // Шифруем номер для поиска в БД
+        String encryptedCardNumber = encryptionService.encrypt(cardNumber);
+
+        Card card = cardService.updateCardStatus(encryptedCardNumber, CardStatus.BLOCKED, user);
+        return ResponseEntity.ok(convertToCardResponse(card));
     }
 
     // ========== АДМИНСКИЕ ЭНДПОИНТЫ ==========
@@ -180,6 +211,25 @@ public class CardController {
                 card.getStatus(),
                 card.getBalance(),
                 card.getUser().getId()
+        );
+    }
+
+    // Преобразование BlockRequest в BlockRequestResponse
+    private BlockRequestResponse convertToBlockRequestResponse(BlockRequest request) {
+        String cardMasked = cardService.getMaskedCardNumber(request.getCard());
+
+        return new BlockRequestResponse(
+                request.getId(),
+                request.getCard().getCardNumber(), // Зашифрованный номер
+                cardMasked,
+                request.getCard().getOwner(),
+                request.getUser().getId(),
+                request.getUser().getUsername(),
+                request.getRequestDate(),
+                request.getReason(),
+                request.getStatus(),
+                request.getProcessedDate(),
+                request.getProcessedBy() != null ? request.getProcessedBy().getUsername() : null
         );
     }
 }

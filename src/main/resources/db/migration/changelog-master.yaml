@@ -9,3 +9,5 @@ databaseChangeLog:
       file: db/migration/changes/004-fix-encrypted-cards.yaml
   - include:
       file: db/migration/changes/005-restore-encrypted-cards.yaml
+  - include:
+      file: db/migration/changes/007-add-block-requests.yaml

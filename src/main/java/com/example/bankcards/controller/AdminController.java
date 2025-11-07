@@ -1,11 +1,10 @@
 package com.example.bankcards.controller;
 
 import com.example.bankcards.dto.AdminCardResponse;
+import com.example.bankcards.dto.BlockRequestResponse;
 import com.example.bankcards.dto.UserResponse;
-import com.example.bankcards.entity.Card;
-import com.example.bankcards.entity.CardStatus;
-import com.example.bankcards.entity.Role;
-import com.example.bankcards.entity.User;
+import com.example.bankcards.entity.*;
+import com.example.bankcards.repository.BlockRequestRepository;
 import com.example.bankcards.service.CardService;
 import com.example.bankcards.service.EncryptionService;
 import com.example.bankcards.service.UserService;
@@ -17,6 +16,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -33,6 +33,9 @@ public class AdminController {
 
     @Autowired
     private CardService cardService;
+
+    @Autowired
+    private BlockRequestRepository blockRequestRepository;
 
     @Autowired
     private EncryptionService encryptionService;
@@ -245,6 +248,65 @@ public class AdminController {
         return ResponseEntity.ok(response);
     }
 
+    // Получить все pending запросы на блокировку
+    @GetMapping("/block-requests/pending")
+    public ResponseEntity<Page<BlockRequestResponse>> getPendingBlockRequests(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("requestDate").ascending());
+        Page<BlockRequest> requests = cardService.getPendingBlockRequests(pageable);
+
+        Page<BlockRequestResponse> response = requests.map(this::convertToBlockRequestResponse);
+        return ResponseEntity.ok(response);
+    }
+
+    // Одобрить блокировку
+    @PutMapping("/block-requests/{requestId}/approve")
+    public ResponseEntity<AdminCardResponse> approveBlockRequest(@PathVariable Long requestId) {
+        // Получаем админа из контекста безопасности
+        User admin = userService.findByUsername(
+                SecurityContextHolder.getContext().getAuthentication().getName()
+        );
+
+        Card card = cardService.approveBlockRequest(requestId, admin);
+        return ResponseEntity.ok(convertToAdminCardResponse(card));
+    }
+
+    // Отклонить блокировку
+    @PutMapping("/block-requests/{requestId}/reject")
+    public ResponseEntity<AdminCardResponse> rejectBlockRequest(
+            @PathVariable Long requestId,
+            @RequestParam(required = false) String reason) {
+
+        User admin = userService.findByUsername(
+                SecurityContextHolder.getContext().getAuthentication().getName()
+        );
+
+        Card card = cardService.rejectBlockRequest(requestId, admin, reason);
+        return ResponseEntity.ok(convertToAdminCardResponse(card));
+    }
+
+    // Получить все запросы на блокировку (история)
+    @GetMapping("/block-requests")
+    public ResponseEntity<Page<BlockRequestResponse>> getAllBlockRequests(
+            @RequestParam(required = false) BlockRequestStatus status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("requestDate").descending());
+        Page<BlockRequest> requests;
+
+        if (status != null) {
+            requests = blockRequestRepository.findByStatus(status, pageable);
+        } else {
+            requests = blockRequestRepository.findAll(pageable);
+        }
+
+        Page<BlockRequestResponse> response = requests.map(this::convertToBlockRequestResponse);
+        return ResponseEntity.ok(response);
+    }
+
     // Преобразование User в UserResponse
     private UserResponse convertToUserResponse(User user) {
         return new UserResponse(
@@ -268,6 +330,25 @@ public class AdminController {
                 card.getBalance(),
                 card.getUser().getId(),
                 card.getUser().getUsername()
+        );
+    }
+
+    // Преобразование BlockRequest в BlockRequestResponse (для админа)
+    private BlockRequestResponse convertToBlockRequestResponse(BlockRequest request) {
+        String cardMasked = cardService.getMaskedCardNumber(request.getCard());
+
+        return new BlockRequestResponse(
+                request.getId(),
+                request.getCard().getCardNumber(), // Зашифрованный номер
+                cardMasked,
+                request.getCard().getOwner(),
+                request.getUser().getId(),
+                request.getUser().getUsername(),
+                request.getRequestDate(),
+                request.getReason(),
+                request.getStatus(),
+                request.getProcessedDate(),
+                request.getProcessedBy() != null ? request.getProcessedBy().getUsername() : null
         );
     }
 }

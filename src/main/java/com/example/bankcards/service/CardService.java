@@ -1,12 +1,11 @@
 package com.example.bankcards.service;
 
-import com.example.bankcards.entity.Card;
-import com.example.bankcards.entity.CardStatus;
-import com.example.bankcards.entity.User;
+import com.example.bankcards.entity.*;
 import com.example.bankcards.exception.CardBlockedException;
 import com.example.bankcards.exception.CardExpiredException;
 import com.example.bankcards.exception.CardNotFoundException;
 import com.example.bankcards.exception.InsufficientFundsException;
+import com.example.bankcards.repository.BlockRequestRepository;
 import com.example.bankcards.repository.CardRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -15,6 +14,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Service
@@ -22,6 +22,9 @@ public class CardService {
 
     @Autowired
     private CardRepository cardRepository;
+
+    @Autowired
+    private BlockRequestRepository blockRequestRepository;
 
     @Autowired
     private EncryptionService encryptionService;
@@ -39,6 +42,94 @@ public class CardService {
         }
 
         return cardRepository.save(card);
+    }
+
+    // Пользователь запрашивает блокировку
+    public BlockRequest requestCardBlock(String cardNumber, User user, String reason) {
+        // Шифруем номер для поиска в БД
+        String encryptedCardNumber = encryptionService.encrypt(cardNumber);
+
+        Card card = getByCardNumberAndUser(encryptedCardNumber, user);
+
+        // Проверяем, что карта активна
+        if (card.getStatus() != CardStatus.ACTIVE) {
+            throw new IllegalArgumentException("Card is not active or already blocked/pending");
+        }
+
+        // Проверяем, что нет pending запроса
+        if (blockRequestRepository.existsByCardCardNumberAndStatus(encryptedCardNumber, BlockRequestStatus.PENDING)) {
+            throw new IllegalArgumentException("Block request already exists for this card");
+        }
+
+        // Создаем запрос на блокировку
+        BlockRequest request = new BlockRequest();
+        request.setCard(card);
+        request.setUser(user);
+        request.setReason(reason);
+        request.setStatus(BlockRequestStatus.PENDING);
+
+        // Меняем статус карты на "ожидает блокировки"
+        card.setStatus(CardStatus.PENDING_BLOCK);
+        cardRepository.save(card);
+
+        return blockRequestRepository.save(request);
+    }
+
+    // Админ одобряет блокировку
+    public Card approveBlockRequest(Long requestId, User admin) {
+        BlockRequest request = blockRequestRepository.findById(requestId)
+                .orElseThrow(() -> new RuntimeException("Block request not found with id: " + requestId));
+
+        if (request.getStatus() != BlockRequestStatus.PENDING) {
+            throw new IllegalArgumentException("Block request is not pending");
+        }
+
+        // Блокируем карту
+        Card card = request.getCard();
+        card.setStatus(CardStatus.BLOCKED);
+
+        // Обновляем запрос
+        request.setStatus(BlockRequestStatus.APPROVED);
+        request.setProcessedDate(LocalDateTime.now());
+        request.setProcessedBy(admin);
+
+        blockRequestRepository.save(request);
+        return cardRepository.save(card);
+    }
+
+    // Админ отклоняет блокировку
+    public Card rejectBlockRequest(Long requestId, User admin, String rejectionReason) {
+        BlockRequest request = blockRequestRepository.findById(requestId)
+                .orElseThrow(() -> new RuntimeException("Block request not found with id: " + requestId));
+
+        if (request.getStatus() != BlockRequestStatus.PENDING) {
+            throw new IllegalArgumentException("Block request is not pending");
+        }
+
+        // Возвращаем карту в активный статус
+        Card card = request.getCard();
+        card.setStatus(CardStatus.ACTIVE);
+
+        // Обновляем запрос
+        request.setStatus(BlockRequestStatus.REJECTED);
+        request.setProcessedDate(LocalDateTime.now());
+        request.setProcessedBy(admin);
+        if (rejectionReason != null && !rejectionReason.trim().isEmpty()) {
+            request.setReason(request.getReason() + " [REJECTED: " + rejectionReason + "]");
+        }
+
+        blockRequestRepository.save(request);
+        return cardRepository.save(card);
+    }
+
+    // Получить pending запросы (для админа)
+    public Page<BlockRequest> getPendingBlockRequests(Pageable pageable) {
+        return blockRequestRepository.findByStatus(BlockRequestStatus.PENDING, pageable);
+    }
+
+    // Получить запросы пользователя
+    public Page<BlockRequest> getUserBlockRequests(User user, Pageable pageable) {
+        return blockRequestRepository.findByUserUsername(user.getUsername(), pageable);
     }
 
     // Найти карту по номеру (зашифрованному)
