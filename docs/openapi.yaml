@@ -1,1 +1,566 @@
 # Здесь будет OpenAPI описание всех доступных эндпоинтов и моделей данных.
+openapi: 3.0.3
+info:
+  title: Bank Cards Management API
+  description: REST API for managing bank cards with JWT authentication
+  version: 1.0.0
+  contact:
+    name: Bank Cards Team
+    email: support@bankcards.com
+
+servers:
+  - url: http://localhost:8080
+    description: Development server
+
+tags:
+  - name: Authentication
+    description: User registration and login
+  - name: Cards
+    description: Bank cards management
+  - name: Transactions
+    description: Money transfers between cards
+  - name: Admin
+    description: Administrative operations
+
+paths:
+  # ========== AUTHENTICATION ENDPOINTS ==========
+  /api/auth/login:
+    post:
+      tags: [Authentication]
+      summary: User login
+      description: Authenticate user and return JWT token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthRequest'
+      responses:
+        '200':
+          description: Successful authentication
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/auth/register:
+    post:
+      tags: [Authentication]
+      summary: User registration
+      description: Register new user (automatically assigned ROLE_USER)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthRequest'
+      responses:
+        '200':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "User registered successfully"
+                  username:
+                    type: string
+                    example: "user1"
+                  role:
+                    type: string
+                    example: "ROLE_USER"
+        '400':
+          description: Registration failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ========== USER CARD ENDPOINTS ==========
+  /api/cards:
+    get:
+      tags: [Cards]
+      summary: Get user's cards
+      description: Get paginated list of user's bank cards
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+            minimum: 1
+            maximum: 100
+        - name: sort
+          in: query
+          required: false
+          schema:
+            type: string
+            default: "owner"
+      responses:
+        '200':
+          description: List of user's cards
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardPageResponse'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+
+  /api/cards/by-number:
+    get:
+      tags: [Cards]
+      summary: Get card by number
+      description: Get card details by card number (original number)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: cardNumber
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9]{16}$'
+            example: "4111111111111111"
+      responses:
+        '200':
+          description: Card details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardResponse'
+        '404':
+          description: Card not found
+
+  /api/cards/balance:
+    get:
+      tags: [Cards]
+      summary: Get card balance
+      description: Get balance of specific card
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: cardNumber
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9]{16}$'
+      responses:
+        '200':
+          description: Card balance
+          content:
+            application/json:
+              schema:
+                type: number
+                format: double
+                example: 1500.50
+        '404':
+          description: Card not found
+
+  /api/cards/block:
+    put:
+      tags: [Cards]
+      summary: Block card
+      description: Block user's card
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: cardNumber
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9]{16}$'
+      responses:
+        '200':
+          description: Card blocked successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardResponse'
+
+  /api/cards/activate:
+    put:
+      tags: [Cards]
+      summary: Activate card
+      description: Activate user's card
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: cardNumber
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9]{16}$'
+      responses:
+        '200':
+          description: Card activated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardResponse'
+
+  # ========== TRANSACTION ENDPOINTS ==========
+  /api/transactions/transfer:
+    post:
+      tags: [Transactions]
+      summary: Transfer between cards
+      description: Transfer money between user's own cards
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransferRequest'
+      responses:
+        '200':
+          description: Transfer completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransferResponse'
+        '400':
+          description: Transfer failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/transactions/history:
+    get:
+      tags: [Transactions]
+      summary: Get card transaction history
+      description: Get paginated transaction history for specific card
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: cardNumber
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9]{16}$'
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Transaction history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransferPageResponse'
+
+  # ========== ADMIN ENDPOINTS ==========
+  /api/admin/cards:
+    get:
+      tags: [Admin]
+      summary: Get all cards (Admin)
+      description: Get paginated list of all cards in system (Admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: List of all cards
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminCardPageResponse'
+        '403':
+          description: Admin access required
+
+  /api/admin/cards/block:
+    put:
+      tags: [Admin]
+      summary: Block any card (Admin)
+      description: Block any card in system (Admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: cardNumber
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9]{16}$'
+      responses:
+        '200':
+          description: Card blocked successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminCardResponse'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    # ========== AUTH SCHEMAS ==========
+    AuthRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+          example: "user1"
+          minLength: 3
+          maxLength: 50
+        password:
+          type: string
+          example: "password123"
+          minLength: 6
+          format: password
+
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          example: "eyJhbGciOiJIUzI1NiJ9..."
+        username:
+          type: string
+          example: "user1"
+        role:
+          type: string
+          example: "ROLE_USER"
+
+    # ========== CARD SCHEMAS ==========
+    CardResponse:
+      type: object
+      properties:
+        maskedNumber:
+          type: string
+          example: "**** **** **** 1111"
+        owner:
+          type: string
+          example: "IVAN IVANOV"
+        expiryDate:
+          type: string
+          format: date
+          example: "2026-12-31"
+        status:
+          type: string
+          enum: [ACTIVE, BLOCKED, EXPIRED]
+          example: "ACTIVE"
+        balance:
+          type: number
+          format: double
+          example: 1500.50
+        userId:
+          type: integer
+          example: 2
+
+    AdminCardResponse:
+      type: object
+      properties:
+        maskedNumber:
+          type: string
+          example: "**** **** **** 1111"
+        owner:
+          type: string
+          example: "IVAN IVANOV"
+        expiryDate:
+          type: string
+          format: date
+          example: "2026-12-31"
+        status:
+          type: string
+          enum: [ACTIVE, BLOCKED, EXPIRED]
+          example: "ACTIVE"
+        balance:
+          type: number
+          format: double
+          example: 1500.50
+        userId:
+          type: integer
+          example: 2
+        username:
+          type: string
+          example: "user1"
+
+    CardPageResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/CardResponse'
+        totalPages:
+          type: integer
+          example: 5
+        totalElements:
+          type: integer
+          example: 42
+        size:
+          type: integer
+          example: 10
+        number:
+          type: integer
+          example: 0
+
+    AdminCardPageResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminCardResponse'
+        totalPages:
+          type: integer
+        totalElements:
+          type: integer
+        size:
+          type: integer
+        number:
+          type: integer
+
+    # ========== TRANSACTION SCHEMAS ==========
+    TransferRequest:
+      type: object
+      required: [fromCardNumber, toCardNumber, amount]
+      properties:
+        fromCardNumber:
+          type: string
+          pattern: '^[0-9]{16}$'
+          example: "4111111111111111"
+        toCardNumber:
+          type: string
+          pattern: '^[0-9]{16}$'
+          example: "4222222222222222"
+        amount:
+          type: number
+          format: double
+          minimum: 0.01
+          example: 100.00
+        description:
+          type: string
+          example: "Payment for services"
+
+    TransferResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        fromCardMasked:
+          type: string
+          example: "**** **** **** 1111"
+        toCardMasked:
+          type: string
+          example: "**** **** **** 2222"
+        amount:
+          type: number
+          format: double
+          example: 100.00
+        transactionDate:
+          type: string
+          format: date-time
+          example: "2024-01-15T14:30:00"
+        description:
+          type: string
+          example: "Payment for services"
+
+    TransferPageResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/TransferResponse'
+        totalPages:
+          type: integer
+        totalElements:
+          type: integer
+        size:
+          type: integer
+        number:
+          type: integer
+
+    # ========== ERROR SCHEMAS ==========
+    ErrorResponse:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: integer
+          example: 400
+        error:
+          type: string
+          example: "Bad Request"
+        message:
+          type: string
+          example: "Invalid input parameters"
+        path:
+          type: string
+          example: "/api/cards/by-number"
+        fieldErrors:
+          type: array
+          items:
+            $ref: '#/components/schemas/FieldError'
+
+    FieldError:
+      type: object
+      properties:
+        field:
+          type: string
+          example: "cardNumber"
+        message:
+          type: string
+          example: "Card number must be 16 digits"
+        rejectedValue:
+          type: string
+          example: "123"
+
+security:
+  - bearerAuth: []
