@@ -1,0 +1,47 @@
+databaseChangeLog:
+  - changeSet:
+      id: 008-restore-encrypted-cards
+      author: bank_system
+      changes:
+        # Обновляем номера карт на зашифрованные
+        - update:
+            tableName: cards
+            where: "card_number = '4111111111111111'"
+            columns:
+              - column: {name: card_number, value: "Nj0RRQL9mvNhBh7DfNHbOHrVbNFf2gXt/a8eAaX1R8E="}
+
+        - update:
+            tableName: cards
+            where: "card_number = '4222222222222222'"
+            columns:
+              - column: {name: card_number, value: "EF4HxpKIujLwK1c1Zn8kCHrVbNFf2gXt/a8eAaX1R8E="}
+
+        - update:
+            tableName: cards
+            where: "card_number = '4333333333333333'"
+            columns:
+              - column: {name: card_number, value: "HX3dZcMJYfMUZ/Z8VsYB9nrVbNFf2gXt/a8eAaX1R8E="}
+
+        - update:
+            tableName: cards
+            where: "card_number = '4555555555555555'"
+            columns:
+              - column: {name: card_number, value: "N7PAnodLwra7YVqE4iOKuHrVbNFf2gXt/a8eAaX1R8E="}
+
+        - update:
+            tableName: cards
+            where: "card_number = '4666666666666666'"
+            columns:
+              - column: {name: card_number, value: "lbg6au9eWxlM8ulxE+xOCHrVbNFf2gXt/a8eAaX1R8E="}
+
+        - update:
+            tableName: cards
+            where: "card_number = '4777777777777777'"
+            columns:
+              - column: {name: card_number, value: "hmvPkwNEEtq9HjTVWq3aJnrVbNFf2gXt/a8eAaX1R8E="}
+
+        - update:
+            tableName: cards
+            where: "card_number = '4888888888888888'"
+            columns:
+              - column: {name: card_number, value: "P2sY0PsB/ZuysGCTl9oP1XrVbNFf2gXt/a8eAaX1R8E="}

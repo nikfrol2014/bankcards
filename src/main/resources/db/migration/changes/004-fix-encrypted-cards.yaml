@@ -1,0 +1,83 @@
+databaseChangeLog:
+  - changeSet:
+      id: 007-fix-card-numbers
+      author: bank_system
+      changes:
+        # Очищаем таблицы (начинаем с чистого листа)
+        - delete:
+            tableName: transactions
+        - delete:
+            tableName: cards
+
+        # Карты для user1 (id=2)
+        - insert:
+            tableName: cards
+            columns:
+              - column: {name: card_number, value: "4111111111111111"}
+              - column: {name: owner, value: "IVAN IVANOV"}
+              - column: {name: expiry_date, value: "2026-12-31"}
+              - column: {name: status, value: ACTIVE}
+              - column: {name: balance, value: 15000.50}
+              - column: {name: user_id, value: 2}
+
+        - insert:
+            tableName: cards
+            columns:
+              - column: {name: card_number, value: "4222222222222222"}
+              - column: {name: owner, value: "IVAN IVANOV"}
+              - column: {name: expiry_date, value: "2026-06-30"}
+              - column: {name: status, value: ACTIVE}
+              - column: {name: balance, value: 7500.00}
+              - column: {name: user_id, value: 2}
+
+        - insert:
+            tableName: cards
+            columns:
+              - column: {name: card_number, value: "4333333333333333"}
+              - column: {name: owner, value: "IVAN IVANOV"}
+              - column: {name: expiry_date, value: "2024-03-31"}
+              - column: {name: status, value: BLOCKED}
+              - column: {name: balance, value: 0.00}
+              - column: {name: user_id, value: 2}
+
+        # Карты для user2 (id=3)
+        - insert:
+            tableName: cards
+            columns:
+              - column: {name: card_number, value: "4555555555555555"}
+              - column: {name: owner, value: "PETR PETROV"}
+              - column: {name: expiry_date, value: "2027-01-31"}
+              - column: {name: status, value: ACTIVE}
+              - column: {name: balance, value: 25000.75}
+              - column: {name: user_id, value: 3}
+
+        - insert:
+            tableName: cards
+            columns:
+              - column: {name: card_number, value: "4666666666666666"}
+              - column: {name: owner, value: "PETR PETROV"}
+              - column: {name: expiry_date, value: "2023-12-31"}
+              - column: {name: status, value: EXPIRED}
+              - column: {name: balance, value: 500.25}
+              - column: {name: user_id, value: 3}
+
+        # Карты для admin (id=1)
+        - insert:
+            tableName: cards
+            columns:
+              - column: {name: card_number, value: "4777777777777777"}
+              - column: {name: owner, value: "ADMIN ADMINOV"}
+              - column: {name: expiry_date, value: "2028-05-31"}
+              - column: {name: status, value: ACTIVE}
+              - column: {name: balance, value: 50000.00}
+              - column: {name: user_id, value: 1}
+
+        - insert:
+            tableName: cards
+            columns:
+              - column: {name: card_number, value: "4888888888888888"}
+              - column: {name: owner, value: "ADMIN ADMINOV"}
+              - column: {name: expiry_date, value: "2026-08-31"}
+              - column: {name: status, value: ACTIVE}
+              - column: {name: balance, value: 15000.00}
+              - column: {name: user_id, value: 1}
