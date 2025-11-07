@@ -72,11 +72,10 @@ public class SecurityConfig {
                         // PUBLIC endpoints
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
-
+                        .requestMatchers("/docs/**").permitAll()  // Разрешаем доступ к документации
                         // PROTECTED endpoints
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/cards/**", "/api/transactions/**").hasAnyRole("USER", "ADMIN")
-
                         .anyRequest().authenticated()
                 );
 
