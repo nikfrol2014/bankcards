@@ -22,6 +22,8 @@ tags:
   - name: Admin
     description: Administrative operations
 
+# ... существующий код до раздела paths ...
+
 paths:
   # ========== AUTHENTICATION ENDPOINTS ==========
   /api/auth/login:
@@ -84,12 +86,41 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  /api/auth/validate:
+    get:
+      tags: [Authentication]
+      summary: Validate token
+      description: Validate JWT token
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+            example: "Bearer eyJhbGciOiJIUzI1NiJ9..."
+      responses:
+        '200':
+          description: Token is valid
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Token is valid"
+                  username:
+                    type: string
+                    example: "user1"
+        '400':
+          description: Token validation failed
+
   # ========== USER CARD ENDPOINTS ==========
   /api/cards:
     get:
       tags: [Cards]
-      summary: Get user's cards
-      description: Get paginated list of user's bank cards
+      summary: "Get user's cards"
+      description: "Get paginated list of user's bank cards"
       security:
         - bearerAuth: []
       parameters:
@@ -116,21 +147,21 @@ paths:
             default: "owner"
       responses:
         '200':
-          description: List of user's cards
+          description: "List of user's cards"
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/CardPageResponse'
         '401':
-          description: Unauthorized
+          description: "Unauthorized"
         '403':
-          description: Forbidden
+          description: "Forbidden"
 
   /api/cards/by-number:
     get:
       tags: [Cards]
-      summary: Get card by number
-      description: Get card details by card number (original number)
+      summary: "Get card by number"
+      description: "Get card details by card number (original number)"
       security:
         - bearerAuth: []
       parameters:
@@ -143,19 +174,19 @@ paths:
             example: "4111111111111111"
       responses:
         '200':
-          description: Card details
+          description: "Card details"
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/CardResponse'
         '404':
-          description: Card not found
+          description: "Card not found"
 
   /api/cards/balance:
     get:
       tags: [Cards]
-      summary: Get card balance
-      description: Get balance of specific card
+      summary: "Get card balance"
+      description: "Get balance of specific card"
       security:
         - bearerAuth: []
       parameters:
@@ -167,7 +198,7 @@ paths:
             pattern: '^[0-9]{16}$'
       responses:
         '200':
-          description: Card balance
+          description: "Card balance"
           content:
             application/json:
               schema:
@@ -175,13 +206,13 @@ paths:
                 format: double
                 example: 1500.50
         '404':
-          description: Card not found
+          description: "Card not found"
 
   /api/cards/block:
     put:
       tags: [Cards]
-      summary: Block card
-      description: Block user's card
+      summary: "Block card"
+      description: "Block user's card"
       security:
         - bearerAuth: []
       parameters:
@@ -193,7 +224,7 @@ paths:
             pattern: '^[0-9]{16}$'
       responses:
         '200':
-          description: Card blocked successfully
+          description: "Card blocked successfully"
           content:
             application/json:
               schema:
@@ -202,8 +233,8 @@ paths:
   /api/cards/activate:
     put:
       tags: [Cards]
-      summary: Activate card
-      description: Activate user's card
+      summary: "Activate card"
+      description: "Activate user's card"
       security:
         - bearerAuth: []
       parameters:
@@ -215,18 +246,52 @@ paths:
             pattern: '^[0-9]{16}$'
       responses:
         '200':
-          description: Card activated successfully
+          description: "Card activated successfully"
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/CardResponse'
 
+  /api/cards/search:
+    get:
+      tags: [Cards]
+      summary: "Search cards by owner name"
+      description: "Search user's cards by owner name (case insensitive)"
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: owner
+          in: query
+          required: true
+          schema:
+            type: string
+            example: "IVAN"
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: "Search results"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardPageResponse'
+
   # ========== TRANSACTION ENDPOINTS ==========
   /api/transactions/transfer:
     post:
       tags: [Transactions]
-      summary: Transfer between cards
-      description: Transfer money between user's own cards
+      summary: "Transfer between cards"
+      description: "Transfer money between user's own cards"
       security:
         - bearerAuth: []
       requestBody:
@@ -237,13 +302,13 @@ paths:
               $ref: '#/components/schemas/TransferRequest'
       responses:
         '200':
-          description: Transfer completed successfully
+          description: "Transfer completed successfully"
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/TransferResponse'
         '400':
-          description: Transfer failed
+          description: "Transfer failed"
           content:
             application/json:
               schema:
@@ -252,8 +317,8 @@ paths:
   /api/transactions/history:
     get:
       tags: [Transactions]
-      summary: Get card transaction history
-      description: Get paginated transaction history for specific card
+      summary: "Get card transaction history"
+      description: "Get paginated transaction history for specific card"
       security:
         - bearerAuth: []
       parameters:
@@ -277,18 +342,396 @@ paths:
             default: 10
       responses:
         '200':
-          description: Transaction history
+          description: "Transaction history"
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/TransferPageResponse'
 
+  /api/transactions/sent:
+    get:
+      tags: [Transactions]
+      summary: "Get sent transactions"
+      description: "Get paginated sent transactions for specific card"
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: cardNumber
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9]{16}$'
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: "Sent transactions"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransferPageResponse'
+
+  /api/transactions/received:
+    get:
+      tags: [Transactions]
+      summary: "Get received transactions"
+      description: "Get paginated received transactions for specific card"
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: cardNumber
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9]{16}$'
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: "Received transactions"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransferPageResponse'
+
+  /api/transactions/period:
+    get:
+      tags: [Transactions]
+      summary: "Get transactions by period"
+      description: "Get paginated transactions for specific card within date range"
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: cardNumber
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9]{16}$'
+        - name: startDate
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+            example: "2024-01-01T00:00:00"
+        - name: endDate
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+            example: "2024-01-31T23:59:59"
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: "Transactions in period"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransferPageResponse'
+
+  /api/transactions/{id}:
+    get:
+      tags: [Transactions]
+      summary: "Get transaction by ID"
+      description: "Get specific transaction details by ID"
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: "Transaction details"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransferResponse'
+        '404':
+          description: "Transaction not found"
+
   # ========== ADMIN ENDPOINTS ==========
+  /api/admin/users:
+    get:
+      tags: [Admin]
+      summary: "Get all users (Admin only)"
+      description: "Get paginated list of all users (Admin only)"
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+        - name: sort
+          in: query
+          required: false
+          schema:
+            type: string
+            default: "id"
+      responses:
+        '200':
+          description: "List of all users"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPageResponse'
+        '403':
+          description: "Admin access required"
+
+  /api/admin/users/{userId}:
+    get:
+      tags: [Admin]
+      summary: "Get user by ID (Admin only)"
+      description: "Get user details by ID (Admin only)"
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 2
+      responses:
+        '200':
+          description: "User details"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '403':
+          description: "Admin access required"
+        '404':
+          description: "User not found"
+
+  /api/admin/users/search:
+    get:
+      tags: [Admin]
+      summary: "Search users by username (Admin only)"
+      description: "Search users by username (case insensitive, Admin only)"
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: username
+          in: query
+          required: true
+          schema:
+            type: string
+            example: "user"
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: "Search results"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPageResponse'
+        '403':
+          description: "Admin access required"
+
+  /api/admin/users/{userId}/role:
+    put:
+      tags: [Admin]
+      summary: "Update user role (Admin only)"
+      description: "Update user role (Admin only)"
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 2
+        - name: newRole
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [ROLE_USER, ROLE_ADMIN]
+            example: "ROLE_ADMIN"
+      responses:
+        '200':
+          description: "User role updated successfully"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "User role updated successfully"
+                  userId:
+                    type: integer
+                    example: 2
+                  newRole:
+                    type: string
+                    example: "ROLE_ADMIN"
+        '403':
+          description: "Admin access required"
+
+  /api/admin/users/{userId}/block:
+    put:
+      tags: [Admin]
+      summary: "Block user (Admin only)"
+      description: "Block user account (Admin only)"
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 2
+      responses:
+        '200':
+          description: "User blocked successfully"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "User blocked successfully"
+                  userId:
+                    type: integer
+                    example: 2
+                  username:
+                    type: string
+                    example: "user1"
+        '403':
+          description: "Admin access required"
+
+  /api/admin/users/{userId}/activate:
+    put:
+      tags: [Admin]
+      summary: "Activate user (Admin only)"
+      description: "Activate user account (Admin only)"
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 2
+      responses:
+        '200':
+          description: "User activated successfully"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "User activated successfully"
+                  userId:
+                    type: integer
+                    example: 2
+                  username:
+                    type: string
+                    example: "user1"
+        '403':
+          description: "Admin access required"
+
+  /api/admin/users/stats:
+    get:
+      tags: [Admin]
+      summary: "Get user statistics (Admin only)"
+      description: "Get user statistics (total users, admin users, etc.)"
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: "User statistics"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalUsers:
+                    type: integer
+                    example: 100
+                  adminUsers:
+                    type: integer
+                    example: 5
+                  regularUsers:
+                    type: integer
+                    example: 95
+                  adminPercentage:
+                    type: number
+                    format: double
+                    example: 5.0
+        '403':
+          description: "Admin access required"
+
   /api/admin/cards:
     get:
       tags: [Admin]
-      summary: Get all cards (Admin)
-      description: Get paginated list of all cards in system (Admin only)
+      summary: "Get all cards (Admin only)"
+      description: "Get paginated list of all cards in system (Admin only)"
       security:
         - bearerAuth: []
       parameters:
@@ -306,19 +749,55 @@ paths:
             default: 10
       responses:
         '200':
-          description: List of all cards
+          description: "List of all cards"
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/AdminCardPageResponse'
         '403':
-          description: Admin access required
+          description: "Admin access required"
+
+  /api/admin/users/{userId}/cards:
+    get:
+      tags: [Admin]
+      summary: "Get user's cards (Admin only)"
+      description: "Get paginated list of specific user's cards (Admin only)"
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 2
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: "User's cards"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminCardPageResponse'
+        '403':
+          description: "Admin access required"
 
   /api/admin/cards/block:
     put:
       tags: [Admin]
-      summary: Block any card (Admin)
-      description: Block any card in system (Admin only)
+      summary: "Block any card (Admin only)"
+      description: "Block any card in system (Admin only)"
       security:
         - bearerAuth: []
       parameters:
@@ -330,11 +809,130 @@ paths:
             pattern: '^[0-9]{16}$'
       responses:
         '200':
-          description: Card blocked successfully
+          description: "Card blocked successfully"
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/AdminCardResponse'
+        '403':
+          description: "Admin access required"
+
+  /api/admin/cards/activate:
+    put:
+      tags: [Admin]
+      summary: "Activate any card (Admin only)"
+      description: "Activate any card in system (Admin only)"
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: cardNumber
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9]{16}$'
+      responses:
+        '200':
+          description: "Card activated successfully"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminCardResponse'
+        '403':
+          description: "Admin access required"
+
+  /api/admin/cards/details:
+    get:
+      tags: [Admin]
+      summary: "Get card details (Admin only)"
+      description: "Get detailed card information (Admin only)"
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: cardNumber
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9]{16}$'
+      responses:
+        '200':
+          description: "Card details"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminCardResponse'
+        '403':
+          description: "Admin access required"
+
+  /api/admin/cards/balance:
+    put:
+      tags: [Admin]
+      summary: "Update card balance (Admin only)"
+      description: "Update card balance (Admin only)"
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: cardNumber
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9]{16}$'
+        - name: newBalance
+          in: query
+          required: true
+          schema:
+            type: number
+            format: double
+            minimum: 0
+            example: 5000.00
+      responses:
+        '200':
+          description: "Balance updated successfully"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminCardResponse'
+        '403':
+          description: "Admin access required"
+
+  /api/admin/cards/by-status:
+    get:
+      tags: [Admin]
+      summary: "Get cards by status (Admin only)"
+      description: "Get paginated cards filtered by status (Admin only)"
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [ACTIVE, BLOCKED, EXPIRED]
+            example: "ACTIVE"
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: "Filtered cards"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminCardPageResponse'
+        '403':
+          description: "Admin access required"
 
 components:
   securitySchemes:
@@ -373,7 +971,84 @@ components:
           type: string
           example: "ROLE_USER"
 
+    # ========== USER SCHEMAS ==========
+    UserResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 2
+        username:
+          type: string
+          example: "user1"
+        email:
+          type: string
+          example: "user1@bank.com"
+        role:
+          type: string
+          enum: [ROLE_USER, ROLE_ADMIN]
+          example: "ROLE_USER"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:30:00"
+
+    UserPageResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserResponse'
+        totalPages:
+          type: integer
+          example: 5
+        totalElements:
+          type: integer
+          example: 42
+        size:
+          type: integer
+          example: 10
+        number:
+          type: integer
+          example: 0
+        last:
+          type: boolean
+          example: false
+        first:
+          type: boolean
+          example: true
+        numberOfElements:
+          type: integer
+          example: 10
+        empty:
+          type: boolean
+          example: false
+
     # ========== CARD SCHEMAS ==========
+    CardRequest:
+      type: object
+      required: [cardNumber, owner, expiryDate]
+      properties:
+        cardNumber:
+          type: string
+          pattern: '^[0-9]{16}$'
+          example: "4111111111111111"
+        owner:
+          type: string
+          example: "IVAN IVANOV"
+          minLength: 2
+          maxLength: 100
+        expiryDate:
+          type: string
+          format: date
+          example: "2026-12-31"
+        balance:
+          type: number
+          format: double
+          minimum: 0
+          example: 1500.00
+
     CardResponse:
       type: object
       properties:
@@ -446,6 +1121,18 @@ components:
         number:
           type: integer
           example: 0
+        last:
+          type: boolean
+          example: false
+        first:
+          type: boolean
+          example: true
+        numberOfElements:
+          type: integer
+          example: 10
+        empty:
+          type: boolean
+          example: false
 
     AdminCardPageResponse:
       type: object
@@ -456,12 +1143,28 @@ components:
             $ref: '#/components/schemas/AdminCardResponse'
         totalPages:
           type: integer
+          example: 5
         totalElements:
           type: integer
+          example: 42
         size:
           type: integer
+          example: 10
         number:
           type: integer
+          example: 0
+        last:
+          type: boolean
+          example: false
+        first:
+          type: boolean
+          example: true
+        numberOfElements:
+          type: integer
+          example: 10
+        empty:
+          type: boolean
+          example: false
 
     # ========== TRANSACTION SCHEMAS ==========
     TransferRequest:
@@ -518,12 +1221,28 @@ components:
             $ref: '#/components/schemas/TransferResponse'
         totalPages:
           type: integer
+          example: 5
         totalElements:
           type: integer
+          example: 42
         size:
           type: integer
+          example: 10
         number:
           type: integer
+          example: 0
+        last:
+          type: boolean
+          example: false
+        first:
+          type: boolean
+          example: true
+        numberOfElements:
+          type: integer
+          example: 10
+        empty:
+          type: boolean
+          example: false
 
     # ========== ERROR SCHEMAS ==========
     ErrorResponse:
@@ -532,6 +1251,7 @@ components:
         timestamp:
           type: string
           format: date-time
+          example: "2024-01-15T14:30:00"
         status:
           type: integer
           example: 400
