@@ -8,6 +8,7 @@
 #  - Открыть нужные порты (например, 5432, 8080).
 #  - Настроить volume для хранения данных БД.
 
+# docker-compose.yml
 services:
   postgres:
     image: postgres:15
@@ -33,7 +34,7 @@ services:
       SPRING_DATASOURCE_USERNAME: bank_user
       SPRING_DATASOURCE_PASSWORD: bank_password
       JWT_SECRET: myVerySecretKeyForJWTGeneration123!
-      ENCRYPTION_SECRET_KEY: mySuperSecretKeyForBankCards123!
+      ENCRYPTION_SECRET_KEY: my16bytekey12345
     ports:
       - "8080:8080"
     depends_on:
