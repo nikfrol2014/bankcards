@@ -37,25 +37,20 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody AuthRequest authRequest) {
-        try {
-            Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(authRequest.getUsername(), authRequest.getPassword())
-            );
+        // убрал try-catch - пусть Spring Security обрабатывает исключения
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(authRequest.getUsername(), authRequest.getPassword())
+        );
 
-            final UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-            final String jwt = jwtUtil.generateToken(userDetails);
+        final UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        final String jwt = jwtUtil.generateToken(userDetails);
 
-            User user = userService.findByUsername(userDetails.getUsername());
+        User user = userService.findByUsername(userDetails.getUsername());
 
-            AuthResponse response = new AuthResponse(jwt, user.getUsername(), user.getRole().name());
-            return ResponseEntity.ok(response);
+        AuthResponse response = new AuthResponse(jwt, user.getUsername(), user.getRole().name());
+        return ResponseEntity.ok(response);
 
-        } catch (Exception e) {
-            Map<String, String> error = new HashMap<>();
-            error.put("error", "Authentication failed");
-            error.put("message", "Invalid username or password");
-            return ResponseEntity.badRequest().body(error);
-        }
+        //  никакого try-catch - исключения поймает GlobalExceptionHandler, а то ишь ты, решил он мне тут 400 возвращать =))
     }
 
     @PostMapping("/register")

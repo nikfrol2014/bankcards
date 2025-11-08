@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.CredentialsExpiredException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.LockedException;
 import org.springframework.security.core.AuthenticationException;
@@ -103,26 +104,38 @@ public class GlobalExceptionHandler {
             AuthenticationException.class,
             UsernameNotFoundException.class,
             BadCredentialsException.class,
-            LockedException.class,  // для заблокированных пользователей
-            DisabledException.class // для отключенных аккаунтов
+            LockedException.class,
+            DisabledException.class,
+            CredentialsExpiredException.class
     })
     public ResponseEntity<ErrorResponse> handleAuthenticationException(
             Exception ex, HttpServletRequest request) {
 
-        log.warn("Authentication failed: {}", ex.getMessage());
+        log.warn("Authentication failed: {} - {}", ex.getClass().getSimpleName(), ex.getMessage());
 
         String errorMessage;
-        if (ex instanceof LockedException || ex instanceof DisabledException) {
-            errorMessage = "Account is locked or disabled";
+        String errorType;
+
+        if (ex instanceof LockedException) {
+            errorMessage = "Account is locked. Please contact administrator.";
+            errorType = "Account Locked";
+        } else if (ex instanceof DisabledException) {
+            errorMessage = "Account is disabled. Please contact administrator.";
+            errorType = "Account Disabled";
         } else if (ex instanceof BadCredentialsException) {
-            errorMessage = "Invalid credentials";
+            errorMessage = "Invalid username or password";
+            errorType = "Invalid Credentials";
+        } else if (ex instanceof UsernameNotFoundException) {
+            errorMessage = "User not found";
+            errorType = "User Not Found";
         } else {
             errorMessage = "Authentication failed";
+            errorType = "Authentication Failed";
         }
 
         ErrorResponse error = new ErrorResponse(
-                HttpStatus.UNAUTHORIZED.value(),  // пусть теперь будет всегда 401 для аутентификации
-                "Authentication Failed",
+                HttpStatus.UNAUTHORIZED.value(),
+                errorType,
                 errorMessage,
                 request.getRequestURI()
         );
