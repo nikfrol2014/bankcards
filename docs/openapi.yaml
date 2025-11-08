@@ -45,8 +45,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AuthResponse'
-        '400':
-          description: Invalid credentials
+        '401':  # решил что теперь 401
+          description: Authentication failed (invalid credentials or account locked)
           content:
             application/json:
               schema:

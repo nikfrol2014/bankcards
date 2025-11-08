@@ -6,6 +6,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.LockedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.validation.FieldError;
@@ -98,15 +101,29 @@ public class GlobalExceptionHandler {
     // 5. Обработка аутентификации - 401 Unauthorized
     @ExceptionHandler({
             AuthenticationException.class,
-            UsernameNotFoundException.class
+            UsernameNotFoundException.class,
+            BadCredentialsException.class,
+            LockedException.class,  // для заблокированных пользователей
+            DisabledException.class // для отключенных аккаунтов
     })
     public ResponseEntity<ErrorResponse> handleAuthenticationException(
             Exception ex, HttpServletRequest request) {
+
         log.warn("Authentication failed: {}", ex.getMessage());
+
+        String errorMessage;
+        if (ex instanceof LockedException || ex instanceof DisabledException) {
+            errorMessage = "Account is locked or disabled";
+        } else if (ex instanceof BadCredentialsException) {
+            errorMessage = "Invalid credentials";
+        } else {
+            errorMessage = "Authentication failed";
+        }
+
         ErrorResponse error = new ErrorResponse(
-                HttpStatus.UNAUTHORIZED.value(),
+                HttpStatus.UNAUTHORIZED.value(),  // пусть теперь будет всегда 401 для аутентификации
                 "Authentication Failed",
-                "Invalid credentials",
+                errorMessage,
                 request.getRequestURI()
         );
         return new ResponseEntity<>(error, HttpStatus.UNAUTHORIZED);
