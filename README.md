@@ -48,8 +48,7 @@ bank-cards/
 
 ```bash
 # Клонировать репозиторий
-git clone <repository-url>
-cd bank-cards
+git clone <https://github.com/nikfrol2014/bankcards.git>
 
 # Запустить все сервисы
 docker-compose up -d --build
