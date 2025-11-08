@@ -37,6 +37,9 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private Role role;
 
+    @Column(name = "is_blocked", nullable = false)
+    private boolean blocked = false;
+
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
@@ -62,13 +65,13 @@ public class User implements UserDetails {
     public boolean isAccountNonExpired() { return true; }
 
     @Override
-    public boolean isAccountNonLocked() { return true; }
+    public boolean isAccountNonLocked() { return !blocked; }
 
     @Override
     public boolean isCredentialsNonExpired() { return true; }
 
     @Override
-    public boolean isEnabled() { return true; }
+    public boolean isEnabled() { return !blocked; }
 
     // UserDetails методы end
 

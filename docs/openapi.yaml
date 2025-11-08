@@ -468,6 +468,44 @@ paths:
           description: "Transaction not found"
 
   # ========== ADMIN ENDPOINTS ==========
+  /api/admin/users/{userId}:
+    delete:
+      tags: [ Admin ]
+      summary: "Delete user (Admin only)"
+      description: "Delete user account (Admin only). User must have no cards."
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 2
+      responses:
+        '200':
+          description: "User deleted successfully"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "User deleted successfully"
+                  userId:
+                    type: integer
+                    example: 2
+                  username:
+                    type: string
+                    example: "user1"
+        '400':
+          description: "Cannot delete user (has cards or self-deletion)"
+        '403':
+          description: "Admin access required"
+        '404':
+          description: "User not found"
+
   /api/admin/users:
     get:
       tags: [Admin]
@@ -503,32 +541,6 @@ paths:
                 $ref: '#/components/schemas/UserPageResponse'
         '403':
           description: "Admin access required"
-
-  /api/admin/users/{userId}:
-    get:
-      tags: [Admin]
-      summary: "Get user by ID (Admin only)"
-      description: "Get user details by ID (Admin only)"
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: userId
-          in: path
-          required: true
-          schema:
-            type: integer
-            example: 2
-      responses:
-        '200':
-          description: "User details"
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UserResponse'
-        '403':
-          description: "Admin access required"
-        '404':
-          description: "User not found"
 
   /api/admin/users/search:
     get:

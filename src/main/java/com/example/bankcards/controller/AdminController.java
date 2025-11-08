@@ -93,28 +93,82 @@ public class AdminController {
         return ResponseEntity.ok(response);
     }
 
-    // Заблокировать пользователя
+    // Блокировка пользователя (теперь попытка реализовать)
     @PutMapping("/users/{userId}/block")
     public ResponseEntity<?> blockUser(@PathVariable Long userId) {
         User user = userService.getUserById(userId);
-        // Здесь можно добавить логику блокировки, если нужно
+
+        // Проверяем, что админ не блокирует сам себя
+        User currentAdmin = userService.findByUsername(
+                SecurityContextHolder.getContext().getAuthentication().getName()
+        );
+
+        if (user.getId().equals(currentAdmin.getId())) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", "Cannot block yourself");
+            error.put("message", "Administrators cannot block their own accounts");
+            return ResponseEntity.badRequest().body(error);
+        }
+
+        user.setBlocked(true);
+        userService.save(user);
 
         Map<String, String> response = new HashMap<>();
         response.put("message", "User blocked successfully");
         response.put("userId", userId.toString());
         response.put("username", user.getUsername());
+        response.put("blocked", "true");
 
         return ResponseEntity.ok(response);
     }
 
-    // Активировать пользователя
+    // Активация пользователя (теперь попытка реализовать)
     @PutMapping("/users/{userId}/activate")
     public ResponseEntity<?> activateUser(@PathVariable Long userId) {
         User user = userService.getUserById(userId);
-        // Здесь можно добавить логику активации, если нужно
+        user.setBlocked(false);
+        userService.save(user);
 
         Map<String, String> response = new HashMap<>();
         response.put("message", "User activated successfully");
+        response.put("userId", userId.toString());
+        response.put("username", user.getUsername());
+        response.put("blocked", "false");
+
+        return ResponseEntity.ok(response);
+    }
+
+    // ДОБАВЛЯЕМ удаление пользователя
+    @DeleteMapping("/users/{userId}")
+    public ResponseEntity<?> deleteUser(@PathVariable Long userId) {
+        User user = userService.getUserById(userId);
+
+        // Проверяем, что админ не удаляет сам себя
+        User currentAdmin = userService.findByUsername(
+                SecurityContextHolder.getContext().getAuthentication().getName()
+        );
+
+        if (user.getId().equals(currentAdmin.getId())) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", "Cannot delete yourself");
+            error.put("message", "Administrators cannot delete their own accounts");
+            return ResponseEntity.badRequest().body(error);
+        }
+
+        // Проверяем, что у пользователя нет карт
+        Page<Card> userCards = cardService.getUserCards(user, PageRequest.of(0, 1));
+        if (userCards.hasContent()) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", "Cannot delete user with cards");
+            error.put("message", "User has associated bank cards. Please delete cards first.");
+            error.put("cardCount", String.valueOf(userCards.getTotalElements()));
+            return ResponseEntity.badRequest().body(error);
+        }
+
+        userService.deleteUser(userId);
+
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "User deleted successfully");
         response.put("userId", userId.toString());
         response.put("username", user.getUsername());
 

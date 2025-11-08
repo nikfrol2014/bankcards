@@ -72,4 +72,14 @@ public class UserService implements UserDetailsService {
     public long getUsersCountByRole(Role role) {
         return userRepository.countByRole(role);
     }
+
+    public void deleteUser(Long userId) {
+        User user = getUserById(userId);
+        userRepository.delete(user);
+    }
+
+    public boolean isUserBlocked(Long userId) {
+        User user = getUserById(userId);
+        return user.isBlocked();
+    }
 }

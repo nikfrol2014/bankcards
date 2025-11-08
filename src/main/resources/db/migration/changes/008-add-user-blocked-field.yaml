@@ -1,0 +1,32 @@
+databaseChangeLog:
+  - changeSet:
+      id: 012-add-user-blocked-field
+      author: bank_system
+      changes:
+        - addColumn:
+            tableName: users
+            columns:
+              - column:
+                  name: is_blocked
+                  type: boolean
+                  defaultValue: false
+                  constraints:
+                    nullable: false
+
+        - update:
+            tableName: users
+            where: "username = 'admin'"
+            columns:
+              - column: {name: is_blocked, value: false}
+
+        - update:
+            tableName: users
+            where: "username = 'user1'"
+            columns:
+              - column: {name: is_blocked, value: false}
+
+        - update:
+            tableName: users
+            where: "username = 'user2'"
+            columns:
+              - column: {name: is_blocked, value: false}
